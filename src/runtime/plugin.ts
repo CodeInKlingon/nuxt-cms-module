@@ -1,5 +1,6 @@
 import { defineNuxtPlugin } from '#app'
 
 export default defineNuxtPlugin((_nuxtApp) => {
-  console.log('Plugin injected by my-module!')
+  // CMS plugin initialization
+  console.log('Nuxt CMS module initialized')
 })

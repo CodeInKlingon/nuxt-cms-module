@@ -8,6 +8,7 @@ import {
   addComponentsDir,
   extendPages,
   useLogger,
+  addLayout,
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
 import { resolve } from 'pathe'
@@ -55,6 +56,26 @@ export default defineNuxtModule<ModuleOptions>({
   meta: {
     name: 'nuxt-cms',
     configKey: 'cms',
+    compatibility: {
+      nuxt: '>=4.0.0',
+    },
+  },
+
+  moduleDependencies(nuxt) {
+    const dependencies: Record<string, any> = {}
+
+    // Only require UI modules if admin panel is enabled
+    const cmsOptions = nuxt.options.cms as ModuleOptions | undefined
+    if (cmsOptions?.admin?.enabled !== false) {
+      dependencies['@nuxt/ui'] = {
+        version: '>=4.0.0',
+      }
+      dependencies['@nuxt/icon'] = {
+        version: '>=2.0.0',
+      }
+    }
+
+    return dependencies
   },
 
   // Default configuration options of the Nuxt module
@@ -121,14 +142,52 @@ export default defineNuxtModule<ModuleOptions>({
 
     // 6. Add admin pages if enabled
     if (options.admin?.enabled) {
-      // We'll add pages in a later step
       logger.info(`Admin panel will be available at ${options.admin.route}`)
+
+      // Add admin pages
+      extendPages((pages) => {
+        const adminRoute = options.admin?.route || '/admin'
+
+        pages.push(
+          {
+            name: 'cms-admin-dashboard',
+            path: adminRoute,
+            file: resolver.resolve('./runtime/pages/admin/index.vue'),
+          },
+          {
+            name: 'cms-admin-login',
+            path: `${adminRoute}/login`,
+            file: resolver.resolve('./runtime/pages/admin/login.vue'),
+          },
+          {
+            name: 'cms-admin-collection-list',
+            path: `${adminRoute}/:collection`,
+            file: resolver.resolve('./runtime/pages/admin/[collection]/index.vue'),
+          },
+          {
+            name: 'cms-admin-collection-create',
+            path: `${adminRoute}/:collection/create`,
+            file: resolver.resolve('./runtime/pages/admin/[collection]/create.vue'),
+          },
+          {
+            name: 'cms-admin-collection-edit',
+            path: `${adminRoute}/:collection/:id`,
+            file: resolver.resolve('./runtime/pages/admin/[collection]/[id].vue'),
+          },
+        )
+      })
 
       // Add components directory for admin UI
       addComponentsDir({
         path: resolver.resolve('./runtime/components'),
         prefix: 'Cms',
       })
+
+      // Add admin layout (using physical file since virtual layouts are complex)
+      addLayout(
+        resolver.resolve('./runtime/layouts/cms-admin.vue'),
+        'cms-admin',
+      )
     }
 
     // 7. Store options in runtime config

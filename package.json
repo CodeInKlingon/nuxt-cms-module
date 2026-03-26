@@ -27,7 +27,7 @@
   ],
   "scripts": {
     "prepack": "nuxt-module-build build",
-    "dev": "npm run dev:prepare && nuxt dev playground",
+    "dev": "npm run dev:prepare && nuxt dev playground --host",
     "dev:build": "nuxt build playground",
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxt prepare playground",
     "release": "npm run lint && npm run test && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
@@ -38,8 +38,9 @@
   },
   "dependencies": {
     "@nuxt/kit": "^4.4.2",
-    "drizzle-orm": "^0.36.4",
+    "drizzle-orm": ">=0.30.0",
     "pathe": "^1.1.2",
+    "tailwindcss": "^4.2.2",
     "ufo": "^1.5.4",
     "zod": "^3.24.1"
   },
@@ -59,6 +60,16 @@
     "vue-tsc": "^3.2.6"
   },
   "peerDependencies": {
+    "@nuxt/icon": "^2.0.0",
+    "@nuxt/ui": "^4.0.0",
     "drizzle-orm": ">=0.30.0"
+  },
+  "peerDependenciesMeta": {
+    "@nuxt/icon": {
+      "optional": true
+    },
+    "@nuxt/ui": {
+      "optional": true
+    }
   }
 }

@@ -1,5 +1,9 @@
 export default defineNuxtConfig({
-  modules: ['nuxt-cms'],
+  modules: [
+    '@nuxt/ui',
+    '@nuxt/icon',
+    'nuxt-cms',
+  ],
   devtools: { enabled: true },
   compatibilityDate: 'latest',
 

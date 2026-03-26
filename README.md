@@ -25,14 +25,18 @@ A powerful, type-safe CMS module for Nuxt with Drizzle ORM integration. Build co
 1. Install the module dependencies:
 
 ```bash
-npm install nuxt-cms drizzle-orm
+npm install nuxt-cms drizzle-orm @nuxt/ui @nuxt/icon
 ```
 
-2. Add the module to your `nuxt.config.ts`:
+2. Add the modules to your `nuxt.config.ts`:
 
 ```ts
 export default defineNuxtConfig({
-  modules: ['nuxt-cms'],
+  modules: [
+    '@nuxt/ui',
+    '@nuxt/icon',
+    'nuxt-cms',
+  ],
 
   cms: {
     // Define your collections
