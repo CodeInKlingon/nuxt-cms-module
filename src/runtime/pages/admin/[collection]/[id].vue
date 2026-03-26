@@ -95,7 +95,7 @@ definePageMeta({
           <form class="space-y-5" @submit.prevent="submit">
             <template v-for="field in collection?.fields" :key="field.name">
               <!-- Text field -->
-              <UFormGroup
+              <UFormField
                 v-if="field.type === 'text'"
                 :label="field.label || field.name"
                 :required="field.required"
@@ -106,10 +106,10 @@ definePageMeta({
                   v-model="formData[field.name]"
                   :placeholder="field.label || field.name"
                 />
-              </UFormGroup>
+              </UFormField>
 
               <!-- Textarea field -->
-              <UFormGroup
+              <UFormField
                 v-else-if="field.type === 'textarea'"
                 :label="field.label || field.name"
                 :required="field.required"
@@ -121,10 +121,10 @@ definePageMeta({
                   :placeholder="field.label || field.name"
                   :rows="5"
                 />
-              </UFormGroup>
+              </UFormField>
 
               <!-- Number field -->
-              <UFormGroup
+              <UFormField
                 v-else-if="field.type === 'number'"
                 :label="field.label || field.name"
                 :required="field.required"
@@ -136,20 +136,20 @@ definePageMeta({
                   type="number"
                   :placeholder="field.label || field.name"
                 />
-              </UFormGroup>
+              </UFormField>
 
               <!-- Boolean field -->
-              <UFormGroup
+              <UFormField
                 v-else-if="field.type === 'boolean'"
                 :label="field.label || field.name"
                 :error="errors[field.name]"
                 :help="field.description"
               >
                 <UToggle v-model="formData[field.name]" />
-              </UFormGroup>
+              </UFormField>
 
               <!-- Date field -->
-              <UFormGroup
+              <UFormField
                 v-else-if="field.type === 'date'"
                 :label="field.label || field.name"
                 :required="field.required"
@@ -160,10 +160,10 @@ definePageMeta({
                   v-model="formData[field.name]"
                   type="date"
                 />
-              </UFormGroup>
+              </UFormField>
 
               <!-- Datetime field -->
-              <UFormGroup
+              <UFormField
                 v-else-if="field.type === 'datetime'"
                 :label="field.label || field.name"
                 :required="field.required"
@@ -174,10 +174,10 @@ definePageMeta({
                   v-model="formData[field.name]"
                   type="datetime-local"
                 />
-              </UFormGroup>
+              </UFormField>
 
               <!-- Select field -->
-              <UFormGroup
+              <UFormField
                 v-else-if="field.type === 'select'"
                 :label="field.label || field.name"
                 :required="field.required"
@@ -189,7 +189,7 @@ definePageMeta({
                   :options="field.widget?.options || []"
                   :placeholder="'Select ' + (field.label || field.name)"
                 />
-              </UFormGroup>
+              </UFormField>
             </template>
 
             <div class="flex items-center gap-3 pt-4 border-t border-default">

@@ -1,57 +1,38 @@
-import type { H3Event } from 'h3'
-import { defineEventHandler, getCookie, setCookie, getHeader, createError } from 'h3'
+import { defineEventHandler } from 'h3'
 import { useRuntimeConfig } from '#imports'
-
-const SESSION_COOKIE = 'cms-session'
-
-/**
- * Check if the request is authenticated
- */
-export async function checkAuth(event: H3Event): Promise<boolean> {
-  const config = useRuntimeConfig() as any
-
-  // Skip if no password configured
-  if (!config.cms?.admin?.password) {
-    return true
-  }
-
-  // Check session cookie
-  const session = getCookie(event, SESSION_COOKIE)
-  if (session === config.cms.admin.password) {
-    return true
-  }
-
-  // Check authorization header
-  const auth = getHeader(event, 'authorization')
-  if (auth === `Bearer ${config.cms.admin.password}`) {
-    // Set session cookie
-    setCookie(event, SESSION_COOKIE, config.cms.admin.password, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
-    return true
-  }
-
-  throw createError({
-    statusCode: 401,
-    message: 'Unauthorized',
-  })
-}
+import { getCollectionDefinition } from '../utils/drizzle-adapter'
 
 /**
- * Auth middleware for CMS routes
+ * Auth middleware for CMS API routes.
+ * - Skips auth for /auth/** endpoints (login, logout)
+ * - Skips auth for GET requests to collections with options.public === true
+ * - Skips auth entirely if no password is configured
+ * - Otherwise requires a valid nuxt-auth-utils session
  */
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig() as any
+  const config = useRuntimeConfig(event) as any
   const path = event.path
+  const apiPrefix = config.public?.cms?.api?.prefix || '/api/cms'
 
-  // Apply to admin routes and API
-  if (
-    path.startsWith(config.public?.cms?.admin?.route || '/admin')
-    || path.startsWith(config.public?.cms?.api?.prefix || '/api/cms')
-  ) {
-    await checkAuth(event)
+  // Only apply to CMS API routes
+  if (!path.startsWith(apiPrefix)) return
+
+  // Never gate the auth endpoints themselves
+  if (path.startsWith(`${apiPrefix}/auth/`)) return
+
+  // Skip auth entirely if no password is configured (dev convenience)
+  if (!config.cms?.admin?.password) return
+
+  // Allow unauthenticated GET reads for public collections
+  if (event.method === 'GET') {
+    const pathAfterPrefix = path.replace(apiPrefix, '').split('?')[0] || ''
+    const collectionName = pathAfterPrefix.split('/').filter(Boolean)[0]
+    if (collectionName) {
+      const collection = getCollectionDefinition(collectionName)
+      if (collection?.options?.public === true) return
+    }
   }
+
+  // Enforce valid session — throws 401 if missing or invalid
+  await requireUserSession(event)
 })

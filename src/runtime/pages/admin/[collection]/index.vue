@@ -38,9 +38,8 @@ const columns = computed(() => {
     .filter((field: any) => ['text', 'number', 'date', 'boolean'].includes(field.type))
     .slice(0, 5)
     .map((field: any) => ({
-      id: field.name,
-      key: field.name,
-      label: field.label || field.name,
+      accessorKey: field.name,
+      header: field.label || field.name,
     }))
     .concat([
       {
@@ -105,7 +104,7 @@ definePageMeta({
 
     <template #body>
       <UTable
-        :rows="items"
+        :data="items"
         :columns="columns"
         :loading="pending"
         :ui="{
@@ -116,6 +115,7 @@ definePageMeta({
           td: 'border-b border-default',
         }"
       >
+        <template #empty>is empty yo</template>
         <template #actions-data="{ row }">
           <div class="flex justify-end gap-1">
             <UTooltip text="Edit">

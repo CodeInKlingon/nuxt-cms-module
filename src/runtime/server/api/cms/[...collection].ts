@@ -1,14 +1,10 @@
-import { defineEventHandler, getRouterParams, getMethod, readBody, getQuery, createError } from 'h3'
+import { defineEventHandler, getMethod, readBody, getQuery, createError } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { CrudService } from '../../services/crud'
-import { checkAuth } from '../../middleware/cms-auth'
 import { getCollectionDefinition } from '../../utils/drizzle-adapter'
 import type { CollectionDefinition } from '../../../types'
 
 export default defineEventHandler(async (event) => {
-  // Check authentication
-  await checkAuth(event)
-
   // Parse the URL path to extract collection name and ID
   const url = event.path || event.node.req.url || ''
   const apiPrefix = '/api/cms'

@@ -47,14 +47,17 @@
   "devDependencies": {
     "@nuxt/devtools": "^3.2.4",
     "@nuxt/eslint-config": "^1.15.2",
+    "@nuxt/icon": "^2.2.1",
     "@nuxt/module-builder": "^1.0.2",
     "@nuxt/schema": "^4.4.2",
     "@nuxt/test-utils": "^4.0.0",
+    "@nuxt/ui": "^4.6.0",
     "@types/node": "latest",
     "changelogen": "^0.6.2",
     "drizzle-kit": "^0.31.2",
     "eslint": "^10.1.0",
     "nuxt": "^4.4.2",
+    "nuxt-auth-utils": "^0.5.29",
     "typescript": "~5.9.3",
     "vitest": "^4.1.1",
     "vue-tsc": "^3.2.6"
@@ -62,13 +65,17 @@
   "peerDependencies": {
     "@nuxt/icon": "^2.0.0",
     "@nuxt/ui": "^4.0.0",
-    "drizzle-orm": ">=0.30.0"
+    "drizzle-orm": ">=0.30.0",
+    "nuxt-auth-utils": "^0.5.29"
   },
   "peerDependenciesMeta": {
     "@nuxt/icon": {
       "optional": true
     },
     "@nuxt/ui": {
+      "optional": true
+    },
+    "nuxt-auth-utils": {
       "optional": true
     }
   }

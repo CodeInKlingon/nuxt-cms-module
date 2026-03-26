@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const config = useRuntimeConfig()
 const router = useRouter()
+const { fetch: refreshSession } = useUserSession()
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
 const title = computed(() => config.public.cms.admin?.title || 'CMS Admin')
 
@@ -18,6 +19,7 @@ const login = async () => {
       body: { password: password.value },
     })
 
+    await refreshSession()
     router.push(adminRoute.value)
   }
   catch {
@@ -50,7 +52,7 @@ definePageMeta({
 
       <UCard>
         <form class="space-y-4" @submit.prevent="login">
-          <UFormGroup
+          <UFormField
             label="Password"
             :error="error"
           >
@@ -62,7 +64,7 @@ definePageMeta({
               autofocus
               icon="i-lucide-lock"
             />
-          </UFormGroup>
+          </UFormField>
 
           <UButton
             type="submit"

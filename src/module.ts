@@ -9,6 +9,7 @@ import {
   extendPages,
   useLogger,
   addLayout,
+  addRouteMiddleware,
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
 import { resolve } from 'pathe'
@@ -73,6 +74,9 @@ export default defineNuxtModule<ModuleOptions>({
       dependencies['@nuxt/icon'] = {
         version: '>=2.0.0',
       }
+      dependencies['nuxt-auth-utils'] = {
+        version: '>=0.5.0',
+      }
     }
 
     return dependencies
@@ -128,6 +132,22 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     // 5. Add server handlers for API
+    // Explicitly register auth middleware (Nitro won't auto-discover middleware from module source)
+    addServerHandler({
+      middleware: true,
+      handler: resolver.resolve('./runtime/server/middleware/cms-auth'),
+    })
+
+    // Auth endpoints (must be registered before the catch-all /** route)
+    addServerHandler({
+      route: joinURL(options.api?.prefix || '/api/cms', '/auth/login'),
+      handler: resolver.resolve('./runtime/server/api/cms/auth/login'),
+    })
+    addServerHandler({
+      route: joinURL(options.api?.prefix || '/api/cms', '/auth/logout'),
+      handler: resolver.resolve('./runtime/server/api/cms/auth/logout'),
+    })
+
     addServerHandler({
       route: joinURL(options.api?.prefix || '/api/cms', '/**'),
       handler: resolver.resolve('./runtime/server/api/cms/[...collection]'),
@@ -188,6 +208,13 @@ export default defineNuxtModule<ModuleOptions>({
         resolver.resolve('./runtime/layouts/cms-admin.vue'),
         'cms-admin',
       )
+
+      // Add client-side route guard middleware
+      addRouteMiddleware({
+        name: 'cms-admin-auth',
+        path: resolver.resolve('./runtime/middleware/cms-admin-auth'),
+        global: true,
+      })
     }
 
     // 7. Store options in runtime config

@@ -64,6 +64,7 @@ export interface CollectionOptions {
   searchable?: boolean                  // Enable search
   defaultSort?: { field: string; order: 'asc' | 'desc' }
   perPage?: number                      // Pagination
+  public?: boolean                      // Allow unauthenticated GET reads (for frontend pages)
 }
 
 // Lifecycle hooks
