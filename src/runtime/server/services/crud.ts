@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import type { CollectionDefinition, CrudContext, PaginatedResult, QueryOptions } from '../../types'
 import { getDrizzleConnection, getCollectionSchema } from '../utils/drizzle-adapter'
 import { executeHooks } from './hooks'
-import { validateData } from './validation'
+import { validateAndCoerce } from './validation'
 
 /**
  * CRUD service for managing collection data
@@ -102,16 +102,16 @@ export class CrudService {
       )
     }
 
-    // Validate data
-    const errors = await validateData(this.collection, data)
-    if (errors.length > 0) {
-      throw new Error(`Validation failed: ${JSON.stringify(errors)}`)
+    // Validate and coerce data
+    const result = await validateAndCoerce(this.collection, data)
+    if (!result.success) {
+      throw new Error(`Validation failed: ${JSON.stringify(result.errors)}`)
     }
 
     // Insert record
     const [record] = await this.db
       .insert(this.schema)
-      .values(data)
+      .values(result.data)
       .returning()
 
     // Execute afterCreate hook
@@ -141,16 +141,16 @@ export class CrudService {
       )
     }
 
-    // Validate data
-    const errors = await validateData(this.collection, data)
-    if (errors.length > 0) {
-      throw new Error(`Validation failed: ${JSON.stringify(errors)}`)
+    // Validate and coerce data
+    const result = await validateAndCoerce(this.collection, data)
+    if (!result.success) {
+      throw new Error(`Validation failed: ${JSON.stringify(result.errors)}`)
     }
 
     // Update record
     const [record] = await this.db
       .update(this.schema)
-      .set(data)
+      .set(result.data)
       .where(eq(this.schema.id, id))
       .returning()
 

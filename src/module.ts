@@ -20,11 +20,6 @@ export interface ModuleOptions {
   // Collection registration
   collections?: Record<string, string>  // { name: path }
 
-  // Database configuration
-  database?: {
-    connection: () => any  // User-provided Drizzle instance factory
-  }
-
   // Admin panel configuration
   admin?: {
     enabled?: boolean                   // Default: true
@@ -107,11 +102,6 @@ export default defineNuxtModule<ModuleOptions>({
   async setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
     const logger = useLogger('nuxt-cms')
-
-    // 1. Validate configuration
-    if (!options.database?.connection) {
-      logger.warn('CMS module: database.connection not configured. Collections will not work until configured.')
-    }
 
     // 2. Load and validate collections
     const collections = await loadCollections(options, nuxt, logger)

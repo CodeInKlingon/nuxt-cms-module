@@ -38,11 +38,12 @@
   },
   "dependencies": {
     "@nuxt/kit": "^4.4.2",
-    "drizzle-orm": ">=0.30.0",
+    "drizzle-orm": ">=0.38.0",
+    "drizzle-zod": "^0.8.0",
     "pathe": "^1.1.2",
     "tailwindcss": "^4.2.2",
     "ufo": "^1.5.4",
-    "zod": "^3.24.1"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@nuxt/devtools": "^3.2.4",
@@ -65,7 +66,7 @@
   "peerDependencies": {
     "@nuxt/icon": "^2.0.0",
     "@nuxt/ui": "^4.0.0",
-    "drizzle-orm": ">=0.30.0",
+    "drizzle-orm": ">=0.38.0",
     "nuxt-auth-utils": "^0.5.29"
   },
   "peerDependenciesMeta": {

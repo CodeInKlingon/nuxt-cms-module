@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-
+const appConfig = useAppConfig()
+appConfig.ui.colors.neutral = "slate";
+appConfig.ui.colors.primary = "sky";
+console.log('appConfig', appConfig.ui.colors)
 const config = useRuntimeConfig()
 
 const collections = computed(() => config.public.cms.collections || [])

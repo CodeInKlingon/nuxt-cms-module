@@ -44,8 +44,7 @@ const columns = computed(() => {
     .concat([
       {
         id: 'actions',
-        key: 'actions',
-        label: '',
+        header: '',
       },
     ])
 })
@@ -115,31 +114,7 @@ definePageMeta({
           td: 'border-b border-default',
         }"
       >
-        <template #empty>is empty yo</template>
-        <template #actions-data="{ row }">
-          <div class="flex justify-end gap-1">
-            <UTooltip text="Edit">
-              <UButton
-                icon="i-lucide-pencil"
-                size="xs"
-                color="neutral"
-                variant="ghost"
-                :to="`${adminRoute}/${collectionName}/${row.id}`"
-              />
-            </UTooltip>
-            <UTooltip text="Delete">
-              <UButton
-                icon="i-lucide-trash"
-                size="xs"
-                color="error"
-                variant="ghost"
-                @click="deleteItem(row.id)"
-              />
-            </UTooltip>
-          </div>
-        </template>
-
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-12 gap-3 text-center">
             <UIcon name="i-lucide-inbox" class="size-10 text-muted" />
             <div>
@@ -157,6 +132,28 @@ definePageMeta({
             >
               New {{ collectionLabel }}
             </UButton>
+          </div>
+        </template>
+        <template #actions-cell="{ row }">
+          <div class="flex justify-end gap-1">
+            <UTooltip text="Edit">
+              <UButton
+                icon="i-lucide-pencil"
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :to="`${adminRoute}/${collectionName}/${row.original.id}`"
+              />
+            </UTooltip>
+            <UTooltip text="Delete">
+              <UButton
+                icon="i-lucide-trash"
+                size="xs"
+                color="error"
+                variant="ghost"
+                @click="deleteItem(row.original.id)"
+              />
+            </UTooltip>
           </div>
         </template>
       </UTable>
