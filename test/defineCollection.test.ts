@@ -18,7 +18,7 @@ describe('defineCollection', () => {
 
     expect(collection.name).toBe('test')
     expect(collection.fields).toHaveLength(1)
-    expect(collection.fields[0].name).toBe('title')
+    expect(collection.fields[0]!.name).toBe('title')
     expect(collection.options?.sortable).toBe(true)
     expect(collection.options?.searchable).toBe(true)
   })

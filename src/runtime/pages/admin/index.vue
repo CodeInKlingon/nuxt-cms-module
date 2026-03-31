@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { CollectionDefinition } from '../../types'
+
 const config = useRuntimeConfig()
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
 const title = computed(() => config.public.cms.admin?.title || 'CMS Admin')
 const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
 
-const { data: collections } = await useFetch(() => `${apiPrefix.value}/collections`, {
-  default: () => [],
+const { data: collections } = await useFetch<CollectionDefinition[]>(() => `${apiPrefix.value}/collections`, {
+  default: (): CollectionDefinition[] => [],
 })
 
 definePageMeta({

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CollectionDefinition, PaginatedResult } from '../../../types'
+
 const route = useRoute()
 const config = useRuntimeConfig()
 const collectionName = computed(() => route.params.collection as string)
@@ -8,13 +10,13 @@ const toast = useToast()
 
 // Fetch the full collections list once. The active collection is derived
 // synchronously via computed below so there is no async gap on navigation.
-const { data: allCollections } = await useFetch(
+const { data: allCollections } = await useFetch<CollectionDefinition[]>(
   () => `${apiPrefix.value}/collections`,
-  { default: () => [] },
+  { default: (): CollectionDefinition[] => [] },
 )
 
 const collection = computed(() =>
-  (allCollections.value as any[]).find((c: any) => c.name === collectionName.value) ?? null,
+  allCollections.value.find(c => c.name === collectionName.value) ?? null,
 )
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
@@ -30,7 +32,7 @@ watch(collectionName, () => {
 })
 
 // Fetch data
-const { data: response, pending, refresh } = await useFetch(
+const { data: response, pending, refresh } = await useFetch<PaginatedResult>(
   () => `/api/cms/${collectionName.value}`,
   {
     query: { page, perPage: pageSize, search },
@@ -45,19 +47,16 @@ const total = computed(() => response.value?.total || 0)
 const columns = computed(() => {
   if (!collection.value) return []
 
-  return collection.value.fields
+  type Col = { accessorKey?: string; id?: string; header: string }
+  const fieldCols: Col[] = collection.value.fields
     .filter((field: any) => ['text', 'number', 'date', 'boolean'].includes(field.type))
     .slice(0, 5)
     .map((field: any) => ({
-      accessorKey: field.name,
-      header: field.label || field.name,
+      accessorKey: field.name as string,
+      header: (field.label || field.name) as string,
     }))
-    .concat([
-      {
-        id: 'actions',
-        header: '',
-      },
-    ])
+
+  return [...fieldCols, { id: 'actions', header: '' }] as Col[]
 })
 
 // Delete item
@@ -153,7 +152,7 @@ definePageMeta({
                 size="xs"
                 color="neutral"
                 variant="ghost"
-                :to="`${adminRoute}/${collectionName}/${row.original.id}`"
+                :to="`${adminRoute}/${collectionName}/${(row.original as Record<string, unknown>).id}`"
               />
             </UTooltip>
             <UTooltip text="Delete">
@@ -162,7 +161,7 @@ definePageMeta({
                 size="xs"
                 color="error"
                 variant="ghost"
-                @click="deleteItem(row.original.id)"
+                @click="deleteItem(String((row.original as Record<string, unknown>).id))"
               />
             </UTooltip>
           </div>

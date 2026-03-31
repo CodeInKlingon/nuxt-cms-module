@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import type { CollectionDefinition } from '../types'
 
 const appConfig = useAppConfig()
 appConfig.ui.colors.neutral = 'slate'
@@ -10,14 +11,14 @@ const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
 const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
 const title = computed(() => config.public.cms.admin?.title || 'CMS Admin')
 
-const { data: collections } = await useFetch(() => `${apiPrefix.value}/collections`, {
-  default: () => [],
+const { data: collections } = await useFetch<CollectionDefinition[]>(() => `${apiPrefix.value}/collections`, {
+  default: (): CollectionDefinition[] => [],
 })
 
 const open = ref(false)
 
 const navLinks = computed<NavigationMenuItem[][]>(() => {
-  const collectionItems: NavigationMenuItem[] = collections.value.map((c: { name: string, options?: { label?: string, icon?: string } }) => ({
+  const collectionItems: NavigationMenuItem[] = collections.value.map(c => ({
     label: c.options?.label || c.name,
     icon: c.options?.icon || 'i-lucide-layers',
     to: `${adminRoute.value}/${c.name}`,
@@ -54,13 +55,6 @@ const logout = async () => {
 <template>
   <UApp>
     <NuxtLoadingIndicator />
-    <UTheme
-      :ui="{
-        primary: 'blue',
-        secondary: 'purple',
-        neutral: 'zinc',
-      }"
-    >
       <UDashboardGroup unit="rem">
         <UDashboardSidebar
           id="cms-sidebar"
@@ -110,7 +104,6 @@ const logout = async () => {
 
         <slot />
       </UDashboardGroup>
-    </UTheme>
   </UApp>
 </template>
 

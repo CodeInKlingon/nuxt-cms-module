@@ -67,7 +67,7 @@ export default defineNuxtModule<ModuleOptions>({
     const dependencies: Record<string, any> = {}
 
     // Only require UI modules if admin panel is enabled
-    const cmsOptions = nuxt.options.cms as ModuleOptions | undefined
+    const cmsOptions = (nuxt.options as any).cms as ModuleOptions | undefined
     if (cmsOptions?.admin?.enabled !== false) {
       dependencies['@nuxt/ui'] = {
         version: '>=4.0.0',
