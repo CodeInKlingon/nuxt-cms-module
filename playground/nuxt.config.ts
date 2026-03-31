@@ -8,6 +8,8 @@ export default defineNuxtConfig({
   compatibilityDate: 'latest',
 
   cms: {
+    database: './server/database/index.ts',
+
     collections: {
       products: './cms/products.ts',
       pages: './cms/pages.ts',
