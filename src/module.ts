@@ -3,6 +3,7 @@ import {
   addPlugin,
   createResolver,
   addServerHandler,
+  addServerTemplate,
   addTemplate,
   addTypeTemplate,
   addComponentsDir,
@@ -10,13 +11,18 @@ import {
   useLogger,
   addLayout,
   addRouteMiddleware,
+  addServerPlugin,
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
-import { resolve } from 'pathe'
+import { resolve, dirname } from 'pathe'
 import type { CollectionDefinition } from './runtime/types'
+import { registerCollections, setDrizzleConnection } from './runtime/server/plugins/database'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
+  // Path to the user's Drizzle database file (must have a default export of the db instance)
+  database?: string
+
   // Collection registration
   collections?: Record<string, string>  // { name: path }
 
@@ -79,6 +85,7 @@ export default defineNuxtModule<ModuleOptions>({
 
   // Default configuration options of the Nuxt module
   defaults: {
+    database: undefined,
     collections: {},
     admin: {
       enabled: true,
@@ -103,25 +110,58 @@ export default defineNuxtModule<ModuleOptions>({
     const resolver = createResolver(import.meta.url)
     const logger = useLogger('nuxt-cms')
 
-    // 2. Load and validate collections
-    const collections = await loadCollections(options, nuxt, logger)
+    // const collections = await loadCollections(options, nuxt, logger)
 
-    logger.info(`Loaded ${collections.length} collection(s): ${collections.map(c => c.name).join(', ')}`)
+    // logger.info(`Loaded ${collections.length} collection(s): ${collections.map(c => c.name).join(', ')}`)
 
-    // 3. Generate virtual module with collections
-    addTemplate({
-      filename: 'cms-collections.mjs',
-      getContents: () => generateCollectionsModule(collections),
-      write: true,
-    })
 
-    // 4. Generate TypeScript types
+    // If collections are defined, generate virtual server barrel export file
+    if (options.collections && Object.keys(options.collections).length > 0) {
+      const toPath = (p: string) => p.replace(/\\/g, '/')
+
+      const colImports = Object.entries(options.collections).map(([, relPath], i) => {
+        const absPath = resolve(nuxt.options.rootDir, relPath)
+        return `import _col${i} from '${toPath(absPath)}'`
+      })
+      .join('\n')
+
+      const colArray = Object.entries(options.collections).map((_, i) => `_col${i}`).join(', ')
+
+      addServerTemplate({
+        filename: '#my-module/collections.mjs',
+        getContents: () => `${colImports}
+        export const collections = [${colArray}]`
+      });
+    }
+
+    if (options.database) {
+      addServerTemplate({
+        filename: '#my-module/db.mjs',
+        getContents: () => `export { default } from '${resolve(nuxt.options.rootDir, options.database!)}'`,
+      })
+    }
+    else {
+      logger.warn(
+        'No `database` path configured for nuxt-cms. '
+        + 'The CMS API will not function until a Drizzle db connection is provided. '
+        + 'Add `cms.database` to your nuxt.config.ts pointing to a file with a default export of your Drizzle db instance.',
+      )
+    }
+
+    // // 4. Generate virtual module with collections
+    // addTemplate({
+    //   filename: 'cms-collections.mjs',
+    //   getContents: () => generateCollectionsModule(collections),
+    //   write: true,
+    // })
+
+    // 5. Generate TypeScript types
     addTypeTemplate({
       filename: 'types/cms.d.ts',
       getContents: () => generateTypes(resolver),
     })
 
-    // 5. Add server handlers for API
+    // 6. Add server handlers for API
     // Explicitly register auth middleware (Nitro won't auto-discover middleware from module source)
     addServerHandler({
       middleware: true,
@@ -138,6 +178,13 @@ export default defineNuxtModule<ModuleOptions>({
       handler: resolver.resolve('./runtime/server/api/cms/auth/logout'),
     })
 
+    // Collections metadata endpoint — must be before the catch-all
+    addServerHandler({
+      route: joinURL(options.api?.prefix || '/api/cms', '/collections'),
+      method: 'get',
+      handler: resolver.resolve('./runtime/server/api/cms/collections/index.get'),
+    })
+
     addServerHandler({
       route: joinURL(options.api?.prefix || '/api/cms', '/**'),
       handler: resolver.resolve('./runtime/server/api/cms/[...collection]'),
@@ -150,7 +197,7 @@ export default defineNuxtModule<ModuleOptions>({
       })
     }
 
-    // 6. Add admin pages if enabled
+    // 7. Add admin pages if enabled
     if (options.admin?.enabled) {
       logger.info(`Admin panel will be available at ${options.admin.route}`)
 
@@ -207,16 +254,17 @@ export default defineNuxtModule<ModuleOptions>({
       })
     }
 
-    // 7. Store options in runtime config
+    // 8. Store options in runtime config
     nuxt.options.runtimeConfig.cms = {
       admin: {
         password: options.admin?.password,
       },
-      collections: collections.map(c => ({
-        name: c.name,
-        fields: c.fields,
-        options: c.options,
-      })),
+      // database: options.database,
+      // collections: collections.map(c => ({
+      //   name: c.name,
+      //   fields: c.fields,
+      //   options: c.options,
+      // })),
     } as any
 
     nuxt.options.runtimeConfig.public.cms = {
@@ -227,30 +275,73 @@ export default defineNuxtModule<ModuleOptions>({
       api: {
         prefix: options.api?.prefix || '/api/cms',
       },
-      collections: collections.map(c => ({
-        name: c.name,
-        fields: c.fields.map(f => ({
-          ...f,
-          validation: f.validation?.map(rule => {
-            // Serialize regex to string for pattern rules
-            if ('value' in rule && rule.value instanceof RegExp) {
-              return {
-                ...rule,
-                value: rule.value.toString(), // Convert to full string format "/pattern/flags"
-                _isRegex: true, // Mark for deserialization
-              }
-            }
-            return rule
-          }),
-        })),
-        options: c.options,
-      })),
+      // collections: collections.map(c => ({
+      //   name: c.name,
+      //   fields: c.fields.map(f => ({
+      //     ...f,
+      //     validation: f.validation?.map(rule => {
+      //       // Serialize regex to string for pattern rules
+      //       if ('value' in rule && rule.value instanceof RegExp) {
+      //         return {
+      //           ...rule,
+      //           value: rule.value.toString(), // Convert to full string format "/pattern/flags"
+      //           _isRegex: true, // Mark for deserialization
+      //         }
+      //       }
+      //       return rule
+      //     }),
+      //   })),
+      //   options: c.options,
+      // })),
     }
 
     // Do not add the extension since the `.ts` will be transpiled to `.mjs` after `npm run prepack`
     addPlugin(resolver.resolve('./runtime/plugin'))
+
+    addServerPlugin(resolver.resolve('./runtime/server/plugins/db.ts'))
   },
 })
+
+/**
+ * Generate the virtual Nitro plugin that auto-wires the user's Drizzle db
+ * connection and collection definitions into the CMS runtime singletons.
+ *
+ * This content is registered via addServerTemplate (nitro.virtual) so it is
+ * processed entirely by Rollup — not by Node's raw ESM loader. Rollup resolves
+ * bare absolute paths (forward-slash) fine on all platforms; only Node's ESM
+ * loader requires file:// URLs for absolute paths on Windows.
+ *
+ * The user dirs and the module runtime are added to nitro.externals.inline so
+ * Rollup fully bundles them and no bare-path imports survive into dev/index.mjs.
+ */
+function generateCmsInitPlugin(
+  resolver: ReturnType<typeof createResolver>,
+  dbAbsPath: string,
+  colEntries: [string, string][],
+  rootDir: string,
+): string {
+  // Use forward slashes — Rollup's resolver handles these on all platforms
+  const toPath = (p: string) => p.replace(/\\/g, '/')
+
+  const colImports = colEntries
+    .map(([, relPath], i) => {
+      const absPath = resolve(rootDir, relPath)
+      return `import _col${i} from '${toPath(absPath)}'`
+    })
+    .join('\n')
+
+  const colArray = colEntries.map((_, i) => `_col${i}`).join(', ')
+
+  return `import _db from '${toPath(dbAbsPath)}'
+import { setDrizzleConnection, registerCollections } from '${toPath(resolver.resolve('./runtime/server/plugins/database'))}'
+${colImports}
+
+export default defineNitroPlugin(() => {
+  setDrizzleConnection(_db)
+  registerCollections([${colArray}])
+})
+`
+}
 
 /**
  * Load collection definitions from configured paths
@@ -310,6 +401,8 @@ async function loadCollections(
     }
   }
 
+  registerCollections(collections)
+
   return collections
 }
 
@@ -363,11 +456,6 @@ declare module 'nuxt/schema' {
       api: {
         prefix: string
       }
-      collections: Array<{
-        name: string
-        fields: any[]
-        options?: any
-      }>
     }
   }
 }

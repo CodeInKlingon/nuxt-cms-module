@@ -43,3 +43,7 @@ export function registerCollections(collections: CollectionDefinition[]) {
     registerCollectionDefinition(collection)
   })
 }
+
+export function getAllCollectionDefinitions(): CollectionDefinition[] {
+  return Array.from(collectionDefinitions.values())
+}

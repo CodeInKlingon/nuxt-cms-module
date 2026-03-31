@@ -3,29 +3,40 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const collectionName = computed(() => route.params.collection as string)
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
+const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
 const toast = useToast()
 
-// Get collection definition
-const collection = computed(() => {
-  return config.public.cms.collections.find((c: any) => c.name === collectionName.value)
-})
+// Fetch the full collections list once. The active collection is derived
+// synchronously via computed below so there is no async gap on navigation.
+const { data: allCollections } = await useFetch(
+  () => `${apiPrefix.value}/collections`,
+  { default: () => [] },
+)
+
+const collection = computed(() =>
+  (allCollections.value as any[]).find((c: any) => c.name === collectionName.value) ?? null,
+)
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
 
-// State
+// State — reset when switching collections so stale pagination/search don't carry over
 const search = ref('')
 const page = ref(1)
 const pageSize = ref(25)
 
-// Fetch data
-const { data: response, pending, refresh } = await useFetch(`/api/cms/${collectionName.value}`, {
-  query: {
-    page,
-    perPage: pageSize,
-    search,
-  },
-  watch: [page, search],
+watch(collectionName, () => {
+  search.value = ''
+  page.value = 1
 })
+
+// Fetch data
+const { data: response, pending, refresh } = await useFetch(
+  () => `/api/cms/${collectionName.value}`,
+  {
+    query: { page, perPage: pageSize, search },
+    watch: [collectionName, page, search],
+  },
+)
 
 const items = computed(() => response.value?.items || [])
 const total = computed(() => response.value?.total || 0)
