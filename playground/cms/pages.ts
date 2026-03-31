@@ -7,7 +7,7 @@ export default defineCollection({
 
   options: {
     label: 'Pages',
-    icon: 'file',
+    icon: 'i-lucide-file-text',
     sortable: true,
     searchable: true,
   },

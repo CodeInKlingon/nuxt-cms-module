@@ -3,7 +3,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 import type { CollectionDefinition } from '../types'
 
 const appConfig = useAppConfig()
-appConfig.ui.colors.neutral = 'slate'
+appConfig.ui.colors.neutral = 'zinc'
 appConfig.ui.colors.primary = 'sky'
 const config = useRuntimeConfig()
 

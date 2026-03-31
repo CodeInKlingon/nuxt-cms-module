@@ -240,10 +240,14 @@ export default defineNuxtModule<ModuleOptions>({
         prefix: 'Cms',
       })
 
-      // Add admin layout (using physical file since virtual layouts are complex)
+      // Add admin layouts
       addLayout(
         resolver.resolve('./runtime/layouts/cms-admin.vue'),
         'cms-admin',
+      )
+      addLayout(
+        resolver.resolve('./runtime/layouts/cms-login.vue'),
+        'cms-login',
       )
 
       // Add client-side route guard middleware
@@ -259,12 +263,6 @@ export default defineNuxtModule<ModuleOptions>({
       admin: {
         password: options.admin?.password,
       },
-      // database: options.database,
-      // collections: collections.map(c => ({
-      //   name: c.name,
-      //   fields: c.fields,
-      //   options: c.options,
-      // })),
     } as any
 
     nuxt.options.runtimeConfig.public.cms = {
@@ -275,24 +273,6 @@ export default defineNuxtModule<ModuleOptions>({
       api: {
         prefix: options.api?.prefix || '/api/cms',
       },
-      // collections: collections.map(c => ({
-      //   name: c.name,
-      //   fields: c.fields.map(f => ({
-      //     ...f,
-      //     validation: f.validation?.map(rule => {
-      //       // Serialize regex to string for pattern rules
-      //       if ('value' in rule && rule.value instanceof RegExp) {
-      //         return {
-      //           ...rule,
-      //           value: rule.value.toString(), // Convert to full string format "/pattern/flags"
-      //           _isRegex: true, // Mark for deserialization
-      //         }
-      //       }
-      //       return rule
-      //     }),
-      //   })),
-      //   options: c.options,
-      // })),
     }
 
     // Do not add the extension since the `.ts` will be transpiled to `.mjs` after `npm run prepack`
@@ -301,135 +281,6 @@ export default defineNuxtModule<ModuleOptions>({
     addServerPlugin(resolver.resolve('./runtime/server/plugins/db.ts'))
   },
 })
-
-/**
- * Generate the virtual Nitro plugin that auto-wires the user's Drizzle db
- * connection and collection definitions into the CMS runtime singletons.
- *
- * This content is registered via addServerTemplate (nitro.virtual) so it is
- * processed entirely by Rollup — not by Node's raw ESM loader. Rollup resolves
- * bare absolute paths (forward-slash) fine on all platforms; only Node's ESM
- * loader requires file:// URLs for absolute paths on Windows.
- *
- * The user dirs and the module runtime are added to nitro.externals.inline so
- * Rollup fully bundles them and no bare-path imports survive into dev/index.mjs.
- */
-function generateCmsInitPlugin(
-  resolver: ReturnType<typeof createResolver>,
-  dbAbsPath: string,
-  colEntries: [string, string][],
-  rootDir: string,
-): string {
-  // Use forward slashes — Rollup's resolver handles these on all platforms
-  const toPath = (p: string) => p.replace(/\\/g, '/')
-
-  const colImports = colEntries
-    .map(([, relPath], i) => {
-      const absPath = resolve(rootDir, relPath)
-      return `import _col${i} from '${toPath(absPath)}'`
-    })
-    .join('\n')
-
-  const colArray = colEntries.map((_, i) => `_col${i}`).join(', ')
-
-  return `import _db from '${toPath(dbAbsPath)}'
-import { setDrizzleConnection, registerCollections } from '${toPath(resolver.resolve('./runtime/server/plugins/database'))}'
-${colImports}
-
-export default defineNitroPlugin(() => {
-  setDrizzleConnection(_db)
-  registerCollections([${colArray}])
-})
-`
-}
-
-/**
- * Load collection definitions from configured paths
- */
-async function loadCollections(
-  options: ModuleOptions,
-  nuxt: any,
-  logger: any,
-): Promise<CollectionDefinition[]> {
-  const collections: CollectionDefinition[] = []
-
-  if (!options.collections || Object.keys(options.collections).length === 0) {
-    logger.warn('No collections configured')
-    return collections
-  }
-
-  for (const [name, path] of Object.entries(options.collections)) {
-    const fullPath = resolve(nuxt.options.rootDir, path)
-
-    try {
-      // Dynamically import the collection file
-      const mod = await import(fullPath).catch((err) => {
-        logger.error(`Failed to import collection "${name}" from ${fullPath}:`, err.message)
-        return null
-      })
-
-      if (!mod) continue
-
-      const collection = mod.default
-
-      if (!collection) {
-        logger.warn(`Collection file "${path}" does not have a default export`)
-        continue
-      }
-
-      // Ensure collection has a name
-      if (!collection.name) {
-        collection.name = name
-      }
-
-      // Validate collection structure
-      if (!collection.schema) {
-        logger.warn(`Collection "${name}" is missing a schema`)
-        continue
-      }
-
-      if (!collection.fields || collection.fields.length === 0) {
-        logger.warn(`Collection "${name}" has no fields defined`)
-        continue
-      }
-
-      collections.push(collection)
-      logger.success(`Loaded collection: ${collection.name}`)
-    }
-    catch (err: any) {
-      logger.error(`Failed to load collection "${name}":`, err.message)
-    }
-  }
-
-  registerCollections(collections)
-
-  return collections
-}
-
-/**
- * Generate the virtual module content for collections
- */
-function generateCollectionsModule(collections: CollectionDefinition[]): string {
-  return `
-export const collections = ${JSON.stringify(
-    collections.map(c => ({
-      name: c.name,
-      options: c.options,
-      fields: c.fields,
-    })),
-    null,
-    2,
-  )}
-
-export function getCollection(name) {
-  return collections.find(c => c.name === name)
-}
-
-export function getAllCollections() {
-  return collections
-}
-`
-}
 
 /**
  * Generate TypeScript type definitions

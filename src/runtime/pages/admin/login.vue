@@ -31,7 +31,7 @@ const login = async () => {
 }
 
 definePageMeta({
-  layout: 'cms-admin',
+  layout: 'cms-login',
 })
 </script>
 

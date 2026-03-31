@@ -7,7 +7,7 @@ export default defineCollection({
 
   options: {
     label: 'Products',
-    icon: 'shopping-cart',
+    icon: 'i-lucide-shopping-cart',
     sortable: true,
     searchable: true,
     defaultSort: { field: 'createdAt', order: 'desc' },
