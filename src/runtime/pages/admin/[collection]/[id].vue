@@ -5,17 +5,25 @@ const config = useRuntimeConfig()
 const collectionName = computed(() => route.params.collection as string)
 const itemId = computed(() => route.params.id as string)
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
+const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
 const toast = useToast()
 
-// Get collection definition
-const collection = computed(() => {
-  return config.public.cms.collections.find((c: any) => c.name === collectionName.value)
-})
+// Fetch the full collections list once; derive active collection synchronously
+const { data: allCollections } = await useFetch(
+  () => `${apiPrefix.value}/collections`,
+  { default: () => [] },
+)
+
+const collection = computed(() =>
+  (allCollections.value as any[]).find((c: any) => c.name === collectionName.value) ?? null,
+)
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
 
 // Fetch existing item
-const { data: item, pending } = await useFetch(`/api/cms/${collectionName.value}/${itemId.value}`)
+const { data: item, pending } = await useFetch(
+  () => `/api/cms/${collectionName.value}/${itemId.value}`,
+)
 
 // Form state
 const formData = ref<Record<string, any>>({})

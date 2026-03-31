@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+
 const appConfig = useAppConfig()
-appConfig.ui.colors.neutral = "slate";
-appConfig.ui.colors.primary = "sky";
-console.log('appConfig', appConfig.ui.colors)
+appConfig.ui.colors.neutral = 'slate'
+appConfig.ui.colors.primary = 'sky'
 const config = useRuntimeConfig()
 
-const collections = computed(() => config.public.cms.collections || [])
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
+const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
 const title = computed(() => config.public.cms.admin?.title || 'CMS Admin')
+
+const { data: collections } = await useFetch(() => `${apiPrefix.value}/collections`, {
+  default: () => [],
+})
 
 const open = ref(false)
 

@@ -1,1 +1,1 @@
-export { getDrizzleConnection, setDrizzleConnection, resetDrizzleConnection, registerCollectionSchema, getCollectionSchema, registerCollections, registerCollectionDefinition, getCollectionDefinition } from '../plugins/database'
+export { getDrizzleConnection, setDrizzleConnection, resetDrizzleConnection, registerCollectionSchema, getCollectionSchema, registerCollections, registerCollectionDefinition, getCollectionDefinition, getAllCollectionDefinitions } from '../plugins/database'

@@ -4,12 +4,18 @@ const router = useRouter()
 const config = useRuntimeConfig()
 const collectionName = computed(() => route.params.collection as string)
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
+const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
 const toast = useToast()
 
-// Get collection definition
-const collection = computed(() => {
-  return config.public.cms.collections.find((c: any) => c.name === collectionName.value)
-})
+// Fetch the full collections list once; derive active collection synchronously
+const { data: allCollections } = await useFetch(
+  () => `${apiPrefix.value}/collections`,
+  { default: () => [] },
+)
+
+const collection = computed(() =>
+  (allCollections.value as any[]).find((c: any) => c.name === collectionName.value) ?? null,
+)
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
 
@@ -18,18 +24,18 @@ const formData = ref<Record<string, any>>({})
 const errors = ref<Record<string, string>>({})
 const submitting = ref(false)
 
-// Initialize form with default values
-onMounted(() => {
-  if (!collection.value) return
-
+// Initialize form with default values whenever the collection changes
+watch(collection, (col) => {
+  if (!col) return
   const initialData: Record<string, any> = {}
-  for (const field of collection.value.fields) {
+  for (const field of col.fields) {
     if (field.defaultValue !== undefined) {
       initialData[field.name] = field.defaultValue
     }
   }
   formData.value = initialData
-})
+  errors.value = {}
+}, { immediate: true })
 
 // Submit form
 const submit = async () => {

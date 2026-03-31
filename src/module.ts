@@ -178,6 +178,13 @@ export default defineNuxtModule<ModuleOptions>({
       handler: resolver.resolve('./runtime/server/api/cms/auth/logout'),
     })
 
+    // Collections metadata endpoint — must be before the catch-all
+    addServerHandler({
+      route: joinURL(options.api?.prefix || '/api/cms', '/collections'),
+      method: 'get',
+      handler: resolver.resolve('./runtime/server/api/cms/collections/index.get'),
+    })
+
     addServerHandler({
       route: joinURL(options.api?.prefix || '/api/cms', '/**'),
       handler: resolver.resolve('./runtime/server/api/cms/[...collection]'),
@@ -449,11 +456,6 @@ declare module 'nuxt/schema' {
       api: {
         prefix: string
       }
-      collections: Array<{
-        name: string
-        fields: any[]
-        options?: any
-      }>
     }
   }
 }

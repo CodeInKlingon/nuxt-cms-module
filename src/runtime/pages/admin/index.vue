@@ -1,8 +1,12 @@
 <script setup lang="ts">
 const config = useRuntimeConfig()
-const collections = computed(() => config.public.cms.collections || [])
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
 const title = computed(() => config.public.cms.admin?.title || 'CMS Admin')
+const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
+
+const { data: collections } = await useFetch(() => `${apiPrefix.value}/collections`, {
+  default: () => [],
+})
 
 definePageMeta({
   layout: 'cms-admin',
