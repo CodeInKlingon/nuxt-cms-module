@@ -12,38 +12,61 @@ export default defineCollection({
     searchable: true,
   },
 
-  fields: [
-    {
-      name: 'title',
-      type: 'text',
-      label: 'Page Title',
-      required: true,
-      validation: [
-        { type: 'min', value: 3 },
-        { type: 'max', value: 200 },
+  dashboard: {
+    list: {
+      columns: [
+        { field: 'title', label: 'Page Title', sortable: true },
+        { field: 'slug', label: 'Slug' },
+        { field: 'published', label: 'Published' },
       ],
     },
-    {
-      name: 'slug',
-      type: 'text',
-      label: 'URL Slug',
-      required: true,
-      validation: [
-        { type: 'pattern', value: /^[a-z0-9-/]+$/, message: 'Only lowercase letters, numbers, hyphens, and slashes' },
+
+    form: {
+      sections: [
+        {
+          label: 'Page Details',
+          fields: [
+            {
+              field: 'title',
+              label: 'Page Title',
+              widget: 'text',
+              required: true,
+              validation: [
+                { type: 'min', value: 3 },
+                { type: 'max', value: 200 },
+              ],
+            },
+            {
+              field: 'slug',
+              label: 'URL Slug',
+              widget: 'text',
+              required: true,
+              description: 'Lowercase letters, numbers, hyphens, and slashes.',
+              validation: [
+                { type: 'pattern', value: /^[a-z0-9-/]+$/, message: 'Only lowercase letters, numbers, hyphens, and slashes' },
+              ],
+            },
+            {
+              field: 'published',
+              label: 'Published',
+              widget: 'boolean',
+              defaultValue: false,
+            },
+          ],
+        },
+        {
+          label: 'Content',
+          fields: [
+            {
+              field: 'content',
+              label: 'Content',
+              widget: 'textarea',
+            },
+          ],
+        },
       ],
     },
-    {
-      name: 'content',
-      type: 'textarea',
-      label: 'Content',
-    },
-    {
-      name: 'published',
-      type: 'boolean',
-      label: 'Published',
-      defaultValue: false,
-    },
-  ],
+  },
 
   hooks: {
     beforeCreate: async (data) => {

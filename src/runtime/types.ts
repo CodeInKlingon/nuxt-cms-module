@@ -1,28 +1,68 @@
-import type { Table } from 'drizzle-orm'
-
 // Collection definition
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface CollectionDefinition<T = any> {
   name: string
-  schema: T
-  fields: FieldDefinition[]
+  schema: T // Drizzle table reference
+  dashboard?: DashboardConfig
   options?: CollectionOptions
   hooks?: CollectionHooks
 }
 
-// Field definition
-export interface FieldDefinition {
-  name: string
-  type: FieldType
-  label?: string
-  description?: string
-  required?: boolean
-  validation?: ValidationRule[]
-  widget?: WidgetConfig
-  defaultValue?: any
+// ---------------------------------------------------------------------------
+// Dashboard — list + form configuration
+// ---------------------------------------------------------------------------
+
+/** Top-level dashboard config attached to a collection definition. */
+export interface DashboardConfig {
+  list?: ListConfig
+  form?: FormConfig
 }
 
-// Field types
-export type FieldType =
+// --- List view ---
+
+/** Configuration for the collection list/table view. */
+export interface ListConfig {
+  columns: ListColumnConfig[]
+  // Future: searchFields, filters, rowActions, etc.
+}
+
+/** A single column definition in the list view. */
+export interface ListColumnConfig {
+  field: string
+  label?: string
+  sortable?: boolean
+  width?: number
+}
+
+// --- Form view ---
+
+/**
+ * Top-level form layout config. Use `tabs` for a tabbed layout or `sections`
+ * for a flat single-page layout. If neither is provided the admin falls back
+ * to auto-generating one section from the schema columns.
+ */
+export interface FormConfig {
+  tabs?: FormTab[]
+  sections?: FormSection[]
+}
+
+/** A top-level tab in the form. */
+export interface FormTab {
+  label: string
+  icon?: string
+  sections: FormSection[]
+}
+
+/** A labelled group of fields within a tab (or at the top level). */
+export interface FormSection {
+  label?: string
+  description?: string
+  fields: FormFieldConfig[]
+}
+
+/** Widget types the admin UI knows how to render. */
+// eslint-disable-next-line @stylistic/operator-linebreak
+export type WidgetType =
   | 'text'
   | 'textarea'
   | 'number'
@@ -34,65 +74,101 @@ export type FieldType =
   | 'richtext'
   | 'file'
   | 'image'
-  | 'relation'
   | 'json'
   | 'array'
+  | 'custom'
 
-// Widget configuration
-export interface WidgetConfig {
-  component?: string                    // Custom widget component
-  props?: Record<string, any>           // Widget props
-  [key: string]: any                    // Widget-specific config
-}
-
-// Validation rules
-export type ValidationRule =
-  | { type: 'required'; message?: string }
-  | { type: 'min'; value: number; message?: string }
-  | { type: 'max'; value: number; message?: string }
-  | { type: 'pattern'; value: RegExp | string; message?: string }
-  | { type: 'email'; message?: string }
-  | { type: 'url'; message?: string }
-  | { type: 'custom'; fn: (value: any) => boolean | Promise<boolean>; message?: string }
-
-// Collection options
-export interface CollectionOptions {
-  label?: string                        // Display name
+/** A single field entry inside a form section. */
+export interface FormFieldConfig {
+  field: string
+  label?: string
   description?: string
-  icon?: string                         // Icon for admin UI
-  sortable?: boolean                    // Enable sorting
-  searchable?: boolean                  // Enable search
-  defaultSort?: { field: string; order: 'asc' | 'desc' }
-  perPage?: number                      // Pagination
-  public?: boolean                      // Allow unauthenticated GET reads (for frontend pages)
+  widget?: WidgetType
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  props?: Record<string, any>
+  required?: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  defaultValue?: any
+  validation?: ValidationRule[]
+  relation?: RelationConfig
+  span?: 1 | 2 | 3 | 4
 }
 
-// Lifecycle hooks
-export interface CollectionHooks<T = any> {
-  beforeCreate?: (data: Partial<T>, context: CrudContext) => Promise<Partial<T>> | Partial<T>
-  afterCreate?: (record: T, context: CrudContext) => Promise<void> | void
-  beforeUpdate?: (id: any, data: Partial<T>, context: CrudContext) => Promise<Partial<T>> | Partial<T>
-  afterUpdate?: (record: T, context: CrudContext) => Promise<void> | void
-  beforeDelete?: (id: any, context: CrudContext) => Promise<boolean> | boolean
-  afterDelete?: (id: any, context: CrudContext) => Promise<void> | void
-  validate?: (data: Partial<T>) => Promise<ValidationError[]> | ValidationError[]
+/** Configuration for a relation field in a form. */
+export interface RelationConfig {
+  type: 'one' | 'many'
+  collection: string
+  displayField: string
+  foreignKey?: string
+  localKey?: string
 }
 
-// Validation error
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
+
+// eslint-disable-next-line @stylistic/operator-linebreak
+export type ValidationRule =
+  | { type: 'required', message?: string }
+  | { type: 'min', value: number, message?: string }
+  | { type: 'max', value: number, message?: string }
+  | { type: 'pattern', value: RegExp | string, message?: string }
+  | { type: 'email', message?: string }
+  | { type: 'url', message?: string }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | { type: 'custom', fn: (value: any) => boolean | Promise<boolean>, message?: string }
+
 export interface ValidationError {
   field: string
   message: string
   type: string
 }
 
-// CRUD context
+// ---------------------------------------------------------------------------
+// Collection options
+// ---------------------------------------------------------------------------
+
+export interface CollectionOptions {
+  label?: string
+  description?: string
+  icon?: string
+  sortable?: boolean
+  searchable?: boolean
+  defaultSort?: { field: string, order: 'asc' | 'desc' }
+  perPage?: number
+  public?: boolean
+}
+
+// ---------------------------------------------------------------------------
+// Lifecycle hooks
+// ---------------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface CollectionHooks<T = any> {
+  beforeCreate?: (data: Partial<T>, context: CrudContext) => Promise<Partial<T>> | Partial<T>
+  afterCreate?: (record: T, context: CrudContext) => Promise<void> | void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  beforeUpdate?: (id: any, data: Partial<T>, context: CrudContext) => Promise<Partial<T>> | Partial<T>
+  afterUpdate?: (record: T, context: CrudContext) => Promise<void> | void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  beforeDelete?: (id: any, context: CrudContext) => Promise<boolean> | boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  afterDelete?: (id: any, context: CrudContext) => Promise<void> | void
+  validate?: (data: Partial<T>) => Promise<ValidationError[]> | ValidationError[]
+}
+
+// ---------------------------------------------------------------------------
+// CRUD / query
+// ---------------------------------------------------------------------------
+
 export interface CrudContext {
-  user?: any                            // Authenticated user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  user?: any
   collection: string
   operation: 'create' | 'read' | 'update' | 'delete'
 }
 
-// Pagination result
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface PaginatedResult<T = any> {
   items: T[]
   total: number
@@ -101,12 +177,12 @@ export interface PaginatedResult<T = any> {
   totalPages: number
 }
 
-// Query options
 export interface QueryOptions {
   page?: number
   perPage?: number
   sort?: string
   order?: 'asc' | 'desc'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filter?: Record<string, any>
   search?: string
 }

@@ -1,6 +1,6 @@
 import { createSchemaFactory } from 'drizzle-zod'
 import type { z } from 'zod/v4'
-import type { CollectionDefinition, FieldDefinition, ValidationError, ValidationRule } from '../../types'
+import type { CollectionDefinition, FormFieldConfig, ValidationError, ValidationRule } from '../../types'
 
 // Factory with date coercion — converts date strings to Date objects automatically
 const { createInsertSchema } = createSchemaFactory({
@@ -8,37 +8,67 @@ const { createInsertSchema } = createSchemaFactory({
 })
 
 /**
- * Build a Zod schema from a Drizzle table + collection field validation rules.
- * Uses drizzle-zod to introspect column types and applies collection-level
- * validation rules (min, max, pattern, email, url) as Zod refinements.
+ * Flatten all FormFieldConfig entries from a collection's dashboard config.
+ * Walks tabs → sections → fields (or sections → fields for flat layouts).
+ * Returns an empty array when no dashboard is defined.
  */
-function buildZodSchema(collection: CollectionDefinition) {
-  // Build a refinement map from collection field definitions
-  const refinements: Record<string, (schema: z.ZodType) => z.ZodType> = {}
+function flattenDashboardFields(collection: CollectionDefinition): FormFieldConfig[] {
+  const dashboard = collection.dashboard
+  if (!dashboard?.form) return []
 
-  for (const field of collection.fields) {
-    if (!field.validation?.length) continue
+  const allFields: FormFieldConfig[] = []
 
-    refinements[field.name] = (columnSchema: z.ZodType) => {
-      return applyFieldRules(columnSchema, field)
+  const addSection = (sections: typeof dashboard.form.sections) => {
+    for (const section of sections ?? []) {
+      allFields.push(...section.fields)
     }
   }
 
-  // Use type assertion — the refinement keys are guaranteed to be valid
-  // column names because they come from collection.fields which map 1:1 to schema columns
+  if (dashboard.form.tabs?.length) {
+    for (const tab of dashboard.form.tabs) {
+      addSection(tab.sections)
+    }
+  }
+  else {
+    addSection(dashboard.form.sections)
+  }
+
+  return allFields
+}
+
+/**
+ * Build a Zod schema from a Drizzle table + dashboard form validation rules.
+ * Uses drizzle-zod to introspect column types and applies per-field validation
+ * rules from `dashboard.form` as Zod refinements.
+ */
+function buildZodSchema(collection: CollectionDefinition) {
+  const fields = flattenDashboardFields(collection)
+
+  // Build a refinement map from dashboard field configs
+  const refinements: Record<string, (schema: z.ZodType) => z.ZodType> = {}
+
+  for (const fieldConfig of fields) {
+    if (!fieldConfig.validation?.length) continue
+
+    refinements[fieldConfig.field] = (columnSchema: z.ZodType) => {
+      return applyFieldRules(columnSchema, fieldConfig)
+    }
+  }
+
+  // Use type assertion — refinement keys are guaranteed to be valid column names
+  // because they come from dashboard.form which maps 1:1 to schema columns
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createInsertSchema(collection.schema, refinements as any)
 }
 
 /**
- * Apply collection-level validation rules to a Zod schema for a single field.
- * Maps our ValidationRule types to Zod methods (min, max, regex, email, url, refine).
+ * Apply dashboard field validation rules to a Zod schema for a single field.
  */
-function applyFieldRules(schema: z.ZodType, field: FieldDefinition): z.ZodType {
+function applyFieldRules(schema: z.ZodType, fieldConfig: FormFieldConfig): z.ZodType {
   let result = schema
 
-  for (const rule of field.validation || []) {
-    result = applyRule(result, field, rule)
+  for (const rule of fieldConfig.validation || []) {
+    result = applyRule(result, fieldConfig, rule)
   }
 
   return result
@@ -47,7 +77,7 @@ function applyFieldRules(schema: z.ZodType, field: FieldDefinition): z.ZodType {
 /**
  * Apply a single validation rule to a Zod schema.
  */
-function applyRule(schema: z.ZodType, field: FieldDefinition, rule: ValidationRule): z.ZodType {
+function applyRule(schema: z.ZodType, fieldConfig: FormFieldConfig, rule: ValidationRule): z.ZodType {
   switch (rule.type) {
     case 'required':
       // drizzle-zod already handles notNull; skip
@@ -63,7 +93,7 @@ function applyRule(schema: z.ZodType, field: FieldDefinition, rule: ValidationRu
         },
         {
           message: rule.message
-            || (field.type === 'number'
+            || (fieldConfig.widget === 'number'
               ? `Must be at least ${rule.value}`
               : `Must be at least ${rule.value} characters`),
         },
@@ -79,7 +109,7 @@ function applyRule(schema: z.ZodType, field: FieldDefinition, rule: ValidationRu
         },
         {
           message: rule.message
-            || (field.type === 'number'
+            || (fieldConfig.widget === 'number'
               ? `Must be at most ${rule.value}`
               : `Must be at most ${rule.value} characters`),
         },
@@ -181,10 +211,11 @@ export type ValidateResult
     | { success: false, errors: ValidationError[] }
 
 /**
- * Validate and coerce incoming data against a Drizzle table schema + collection rules.
+ * Validate and coerce incoming data against a Drizzle table schema + dashboard
+ * field validation rules.
  *
  * - Generates a Zod insert schema from the Drizzle table (with date coercion)
- * - Layers collection field validation rules as Zod refinements
+ * - Layers validation rules from `dashboard.form` fields as Zod refinements
  * - Runs the collection's hooks.validate custom hook
  * - Returns coerced data on success, or ValidationError[] on failure
  */
@@ -212,24 +243,24 @@ export async function validateAndCoerce(
 }
 
 /**
- * Legacy validation function — validates data against collection field definitions
- * without schema coercion. Kept for backward compatibility with existing tests and
- * code paths that don't need coercion.
+ * Legacy validation function — validates data against dashboard form field
+ * configs without schema coercion. Kept for code paths that don't need coercion.
  */
 export async function validateData(
   collection: CollectionDefinition,
   data: Record<string, unknown>,
 ): Promise<ValidationError[]> {
   const errors: ValidationError[] = []
+  const fields = flattenDashboardFields(collection)
 
-  for (const field of collection.fields) {
-    const value = data[field.name]
+  for (const fieldConfig of fields) {
+    const value = data[fieldConfig.field]
 
     // Check required
-    if (field.required && (value === undefined || value === null || value === '')) {
+    if (fieldConfig.required && (value === undefined || value === null || value === '')) {
       errors.push({
-        field: field.name,
-        message: `${field.label || field.name} is required`,
+        field: fieldConfig.field,
+        message: `${fieldConfig.label || fieldConfig.field} is required`,
         type: 'required',
       })
       continue
@@ -240,9 +271,9 @@ export async function validateData(
       continue
 
     // Validate against rules
-    if (field.validation) {
-      for (const rule of field.validation) {
-        const error = await validateRule(field, value, rule)
+    if (fieldConfig.validation) {
+      for (const rule of fieldConfig.validation) {
+        const error = await validateRule(fieldConfig, value, rule)
         if (error) {
           errors.push(error)
         }
@@ -263,7 +294,7 @@ export async function validateData(
  * Validate a single value against a validation rule (legacy helper).
  */
 async function validateRule(
-  field: FieldDefinition,
+  fieldConfig: FormFieldConfig,
   value: unknown,
   rule: ValidationRule,
 ): Promise<ValidationError | null> {
@@ -274,14 +305,14 @@ async function validateRule(
     case 'min':
       if (typeof value === 'number' && value < rule.value) {
         return {
-          field: field.name,
+          field: fieldConfig.field,
           message: rule.message || `Must be at least ${rule.value}`,
           type: 'min',
         }
       }
       if (typeof value === 'string' && value.length < rule.value) {
         return {
-          field: field.name,
+          field: fieldConfig.field,
           message: rule.message || `Must be at least ${rule.value} characters`,
           type: 'min',
         }
@@ -291,14 +322,14 @@ async function validateRule(
     case 'max':
       if (typeof value === 'number' && value > rule.value) {
         return {
-          field: field.name,
+          field: fieldConfig.field,
           message: rule.message || `Must be at most ${rule.value}`,
           type: 'max',
         }
       }
       if (typeof value === 'string' && value.length > rule.value) {
         return {
-          field: field.name,
+          field: fieldConfig.field,
           message: rule.message || `Must be at most ${rule.value} characters`,
           type: 'max',
         }
@@ -317,7 +348,7 @@ async function validateRule(
       }
       if (!regex.test(value as string)) {
         return {
-          field: field.name,
+          field: fieldConfig.field,
           message: rule.message || 'Invalid format',
           type: 'pattern',
         }
@@ -329,7 +360,7 @@ async function validateRule(
       const emailRegex = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/
       if (!emailRegex.test(value as string)) {
         return {
-          field: field.name,
+          field: fieldConfig.field,
           message: rule.message || 'Invalid email address',
           type: 'email',
         }
@@ -343,7 +374,7 @@ async function validateRule(
       }
       catch {
         return {
-          field: field.name,
+          field: fieldConfig.field,
           message: rule.message || 'Invalid URL',
           type: 'url',
         }
@@ -354,7 +385,7 @@ async function validateRule(
       const isValid = await rule.fn(value)
       if (!isValid) {
         return {
-          field: field.name,
+          field: fieldConfig.field,
           message: rule.message || 'Validation failed',
           type: 'custom',
         }

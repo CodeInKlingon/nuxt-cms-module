@@ -3,45 +3,63 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 import { validateData, validateAndCoerce } from '../src/runtime/server/services/validation'
 import type { CollectionDefinition } from '../src/runtime/types'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a minimal CollectionDefinition with a flat sections form layout.
+ * Used by the legacy validateData tests to replicate the old fields[] behaviour.
+ */
+const mockCollection: CollectionDefinition = {
+  name: 'test',
+  schema: {} as any,
+  dashboard: {
+    form: {
+      sections: [
+        {
+          fields: [
+            {
+              field: 'title',
+              label: 'Title',
+              widget: 'text',
+              required: true,
+              validation: [
+                { type: 'min', value: 3 },
+                { type: 'max', value: 100 },
+              ],
+            },
+            {
+              field: 'email',
+              label: 'Email',
+              widget: 'text',
+              required: false,
+              validation: [
+                { type: 'email' },
+              ],
+            },
+            {
+              field: 'age',
+              label: 'Age',
+              widget: 'number',
+              validation: [
+                { type: 'min', value: 18 },
+                { type: 'max', value: 120 },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  },
+}
+
 // ---------------------------------------------------------------------------
 // Legacy validateData tests (field-level validation, no schema introspection)
 // ---------------------------------------------------------------------------
 describe('validation service (legacy validateData)', () => {
-  const mockCollection: CollectionDefinition = {
-    name: 'test',
-    schema: {} as any,
-    fields: [
-      {
-        name: 'title',
-        type: 'text',
-        label: 'Title',
-        required: true,
-        validation: [
-          { type: 'min', value: 3 },
-          { type: 'max', value: 100 },
-        ],
-      },
-      {
-        name: 'email',
-        type: 'text',
-        label: 'Email',
-        required: false,
-        validation: [
-          { type: 'email' },
-        ],
-      },
-      {
-        name: 'age',
-        type: 'number',
-        label: 'Age',
-        validation: [
-          { type: 'min', value: 18 },
-          { type: 'max', value: 120 },
-        ],
-      },
-    ],
-  }
-
   it('should pass validation for valid data', async () => {
     const data = {
       title: 'Test Title',
@@ -136,47 +154,69 @@ const testProducts = sqliteTable('test_products', {
 const productCollection: CollectionDefinition = {
   name: 'test_products',
   schema: testProducts,
-  fields: [
-    {
-      name: 'name',
-      type: 'text',
-      label: 'Product Name',
-      required: true,
-      validation: [
-        { type: 'min', value: 3, message: 'Name must be at least 3 characters' },
-        { type: 'max', value: 100 },
+  dashboard: {
+    form: {
+      tabs: [
+        {
+          label: 'Details',
+          sections: [
+            {
+              fields: [
+                {
+                  field: 'name',
+                  label: 'Product Name',
+                  widget: 'text',
+                  required: true,
+                  validation: [
+                    { type: 'min', value: 3, message: 'Name must be at least 3 characters' },
+                    { type: 'max', value: 100 },
+                  ],
+                },
+                {
+                  field: 'slug',
+                  label: 'URL Slug',
+                  widget: 'text',
+                  required: true,
+                  validation: [
+                    { type: 'pattern', value: /^[a-z0-9-]+$/, message: 'Only lowercase letters, numbers, and hyphens' },
+                  ],
+                },
+                {
+                  field: 'price',
+                  label: 'Price (cents)',
+                  widget: 'number',
+                  required: true,
+                  validation: [
+                    { type: 'min', value: 0, message: 'Price must be positive' },
+                  ],
+                },
+                {
+                  field: 'active',
+                  label: 'Active',
+                  widget: 'boolean',
+                  defaultValue: true,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Content',
+          sections: [
+            {
+              fields: [
+                {
+                  field: 'description',
+                  label: 'Description',
+                  widget: 'textarea',
+                },
+              ],
+            },
+          ],
+        },
       ],
     },
-    {
-      name: 'slug',
-      type: 'text',
-      label: 'URL Slug',
-      required: true,
-      validation: [
-        { type: 'pattern', value: /^[a-z0-9-]+$/, message: 'Only lowercase letters, numbers, and hyphens' },
-      ],
-    },
-    {
-      name: 'description',
-      type: 'textarea',
-      label: 'Description',
-    },
-    {
-      name: 'price',
-      type: 'number',
-      label: 'Price (cents)',
-      required: true,
-      validation: [
-        { type: 'min', value: 0, message: 'Price must be positive' },
-      ],
-    },
-    {
-      name: 'active',
-      type: 'boolean',
-      label: 'Active',
-      defaultValue: true,
-    },
-  ],
+  },
 }
 
 describe('validateAndCoerce (drizzle-zod)', () => {

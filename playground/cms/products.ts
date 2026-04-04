@@ -13,47 +13,82 @@ export default defineCollection({
     defaultSort: { field: 'createdAt', order: 'desc' },
   },
 
-  fields: [
-    {
-      name: 'name',
-      type: 'text',
-      label: 'Product Name',
-      required: true,
-      validation: [
-        { type: 'min', value: 3, message: 'Name must be at least 3 characters' },
-        { type: 'max', value: 100 },
+  dashboard: {
+    list: {
+      columns: [
+        { field: 'name', label: 'Product Name', sortable: true },
+        { field: 'slug', label: 'Slug' },
+        { field: 'price', label: 'Price (cents)', sortable: true },
+        { field: 'active', label: 'Active' },
       ],
     },
-    {
-      name: 'slug',
-      type: 'text',
-      label: 'URL Slug',
-      required: true,
-      validation: [
-        { type: 'pattern', value: /^[a-z0-9-]+$/, message: 'Only lowercase letters, numbers, and hyphens' },
+
+    form: {
+      tabs: [
+        {
+          label: 'Details',
+          icon: 'i-lucide-info',
+          sections: [
+            {
+              label: 'Basic Info',
+              fields: [
+                {
+                  field: 'name',
+                  label: 'Product Name',
+                  widget: 'text',
+                  required: true,
+                  validation: [
+                    { type: 'min', value: 3, message: 'Name must be at least 3 characters' },
+                    { type: 'max', value: 100 },
+                  ],
+                },
+                {
+                  field: 'slug',
+                  label: 'URL Slug',
+                  widget: 'text',
+                  required: true,
+                  description: 'Lowercase letters, numbers, and hyphens only.',
+                  validation: [
+                    { type: 'pattern', value: /^[a-z0-9-]+$/, message: 'Only lowercase letters, numbers, and hyphens' },
+                  ],
+                },
+                {
+                  field: 'price',
+                  label: 'Price (cents)',
+                  widget: 'number',
+                  required: true,
+                  validation: [
+                    { type: 'min', value: 0, message: 'Price must be positive' },
+                  ],
+                },
+                {
+                  field: 'active',
+                  label: 'Active',
+                  widget: 'boolean',
+                  defaultValue: true,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Content',
+          icon: 'i-lucide-align-left',
+          sections: [
+            {
+              fields: [
+                {
+                  field: 'description',
+                  label: 'Description',
+                  widget: 'textarea',
+                },
+              ],
+            },
+          ],
+        },
       ],
     },
-    {
-      name: 'description',
-      type: 'textarea',
-      label: 'Description',
-    },
-    {
-      name: 'price',
-      type: 'number',
-      label: 'Price (cents)',
-      required: true,
-      validation: [
-        { type: 'min', value: 0, message: 'Price must be positive' },
-      ],
-    },
-    {
-      name: 'active',
-      type: 'boolean',
-      label: 'Active',
-      defaultValue: true,
-    },
-  ],
+  },
 
   hooks: {
     beforeCreate: async (data) => {

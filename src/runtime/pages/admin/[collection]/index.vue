@@ -43,18 +43,28 @@ const { data: response, pending, refresh } = await useFetch<PaginatedResult>(
 const items = computed(() => response.value?.items || [])
 const total = computed(() => response.value?.total || 0)
 
-// Table columns based on collection fields
+// Table columns — driven by dashboard.list.columns when defined,
+// otherwise fall back to the first 5 columns of the first record.
 const columns = computed(() => {
-  if (!collection.value) return []
+  type Col = { accessorKey?: string, id?: string, header: string }
 
-  type Col = { accessorKey?: string; id?: string; header: string }
-  const fieldCols: Col[] = collection.value.fields
-    .filter((field: any) => ['text', 'number', 'date', 'boolean'].includes(field.type))
-    .slice(0, 5)
-    .map((field: any) => ({
-      accessorKey: field.name as string,
-      header: (field.label || field.name) as string,
+  const listColumns = collection.value?.dashboard?.list?.columns
+  let fieldCols: Col[]
+
+  if (listColumns?.length) {
+    fieldCols = listColumns.map(col => ({
+      accessorKey: col.field,
+      header: col.label || col.field,
     }))
+  }
+  else {
+    // Fallback: derive columns from the first record's keys (max 5)
+    const firstItem = items.value[0]
+    const keys = firstItem
+      ? Object.keys(firstItem).filter(k => k !== 'id').slice(0, 5)
+      : []
+    fieldCols = keys.map(key => ({ accessorKey: key, header: key }))
+  }
 
   return [...fieldCols, { id: 'actions', header: '' }] as Col[]
 })
@@ -126,7 +136,10 @@ definePageMeta({
       >
         <template #empty>
           <div class="flex flex-col items-center justify-center py-12 gap-3 text-center">
-            <UIcon name="i-lucide-inbox" class="size-10 text-muted" />
+            <UIcon
+              name="i-lucide-inbox"
+              class="size-10 text-muted"
+            />
             <div>
               <p class="font-medium text-highlighted">
                 No {{ collectionLabel }} yet
