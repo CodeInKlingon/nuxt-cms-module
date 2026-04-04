@@ -108,7 +108,7 @@ const label = computed(() => {
     :error="error"
     :help="field.description"
   >
-    <UToggle v-model="value" />
+    <USwitch v-model="value" />
   </UFormField>
 
   <!-- date -->

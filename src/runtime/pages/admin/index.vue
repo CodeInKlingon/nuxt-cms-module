@@ -62,9 +62,9 @@ definePageMeta({
                   <p v-if="collection.options?.description" class="mt-0.5 text-sm text-muted truncate">
                     {{ collection.options.description }}
                   </p>
-                  <p v-else class="mt-0.5 text-sm text-muted">
-                    {{ collection.fields.length }} field{{ collection.fields.length === 1 ? '' : 's' }}
-                  </p>
+                  <!-- <p v-else class="mt-0.5 text-sm text-muted">
+                    {{ collection.dashboard?.list?.columns?.length ?? 0 }} column{{ (collection.dashboard?.list?.columns?.length ?? 0) === 1 ? '' : 's' }}
+                  </p> -->
                 </div>
 
                 <UIcon
