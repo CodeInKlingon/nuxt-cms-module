@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { eq } from 'drizzle-orm'
+import { eq, like, or } from 'drizzle-orm'
 import type { CollectionDefinition, CrudContext, PaginatedResult, QueryOptions } from '../../types'
 import { getDrizzleConnection, getCollectionSchema } from '../utils/drizzle-adapter'
 import { executeHooks } from './hooks'
@@ -41,8 +41,6 @@ export class CrudService {
     const {
       page = 1,
       perPage = this.collection.options?.perPage || 25,
-      sort,
-      order = 'asc',
       filter,
       search,
     } = query
@@ -53,7 +51,12 @@ export class CrudService {
     // TODO: Implement filtering based on filter object
 
     // Apply search
-    // TODO: Implement search across searchable fields
+    if (search && this.collection.options?.searchable) {
+      const searchColumns = this.collection.options?.searchColumns
+      if (searchColumns && searchColumns.length > 0) {
+        dbQuery = this.applySearchFilter(dbQuery, search, searchColumns)
+      }
+    }
 
     // Apply sorting
     // TODO: Implement sorting based on sort field
@@ -205,9 +208,41 @@ export class CrudService {
    * Count total records with optional filters
    */
   private async count(filter?: any, search?: string): Promise<number> {
+    let countQuery = this.db.select().from(this.schema)
+
+    // Apply search filter to count as well
+    if (search && this.collection.options?.searchable) {
+      const searchColumns = this.collection.options?.searchColumns
+      if (searchColumns && searchColumns.length > 0) {
+        countQuery = this.applySearchFilter(countQuery, search, searchColumns)
+      }
+    }
+
     // TODO: Implement proper count with filters
-    // For now, return a simple count
-    const results = await this.db.select().from(this.schema)
+    const results = await countQuery
     return results.length
+  }
+
+  /**
+   * Apply search filter across specified columns using partial matching with OR logic
+   */
+  private applySearchFilter(query: any, searchTerm: string, columns: string[]) {
+    const searchPattern = `%${searchTerm}%`
+    const conditions = columns
+      .map((col) => {
+        // Validate column exists in schema to avoid runtime errors
+        if (!(col in this.schema)) {
+          console.warn(`Search column "${col}" not found in schema for collection "${this.collection.name}"`)
+          return null
+        }
+        return like(this.schema[col], searchPattern)
+      })
+      .filter((condition): condition is ReturnType<typeof like> => condition !== null)
+
+    if (conditions.length === 0) {
+      return query
+    }
+
+    return query.where(or(...conditions))
   }
 }

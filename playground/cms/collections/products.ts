@@ -10,6 +10,7 @@ export default defineCollection({
     icon: 'i-lucide-shopping-cart',
     sortable: true,
     searchable: true,
+    searchColumns: ['name', 'slug', 'description'],
     defaultSort: { field: 'createdAt', order: 'desc' },
   },
 

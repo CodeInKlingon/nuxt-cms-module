@@ -83,6 +83,7 @@ export default defineCollection({
     label: 'Products',
     sortable: true,
     searchable: true,
+    searchColumns: ['name', 'description'],
   },
 
   fields: [
@@ -150,8 +151,34 @@ The module automatically creates REST endpoints for each collection:
 - `perPage` - Items per page (default: 25)
 - `sort` - Field to sort by
 - `order` - Sort order ('asc' or 'desc')
-- `search` - Search query
+- `search` - Search query (searches across `searchColumns` if defined)
 - `filter` - Filter object
+
+### Search Configuration
+
+Enable search on specific columns by adding `searchColumns` to your collection options:
+
+```ts
+options: {
+  searchable: true,
+  searchColumns: ['name', 'slug', 'description'],
+}
+```
+
+The search input will appear in the admin dashboard with a placeholder showing which fields are searchable. The search uses partial matching (case-insensitive) with OR logic across all specified columns.
+
+**API Usage:**
+
+```bash
+# Search for 'laptop' in name, slug, or description fields
+GET /api/cms/products?search=laptop
+```
+
+**Notes:**
+- Search uses SQL `LIKE` with `%term%` pattern for partial matching
+- Results match if the search term appears in ANY of the searchColumns
+- The total count in pagination reflects the filtered search results
+- If `searchable: true` but no `searchColumns` defined, the search input will be visible but non-functional
 
 ## Field Types
 

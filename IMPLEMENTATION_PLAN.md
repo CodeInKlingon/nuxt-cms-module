@@ -223,7 +223,8 @@ export interface CollectionOptions {
   description?: string
   icon?: string                         // Icon for admin UI
   sortable?: boolean                    // Enable sorting
-  searchable?: boolean                  // Enable search
+  searchable?: boolean                  // Enable search ✅ IMPLEMENTED
+  searchColumns?: string[]              // Columns to search across ✅ IMPLEMENTED
   defaultSort?: { field: string; order: 'asc' | 'desc' }
   perPage?: number                      // Pagination
 }
@@ -584,9 +585,13 @@ export class CrudService {
       // TODO: Implement filtering
     }
     
-    // Apply search
+    // Apply search ✅ IMPLEMENTED
     if (search && this.collection.options?.searchable) {
-      // TODO: Implement search
+      // Uses Drizzle like() with OR logic for partial matching across searchColumns
+      const searchColumns = this.collection.options?.searchColumns
+      if (searchColumns && searchColumns.length > 0) {
+        dbQuery = this.applySearchFilter(dbQuery, search, searchColumns)
+      }
     }
     
     // Apply sorting

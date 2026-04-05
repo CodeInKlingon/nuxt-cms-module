@@ -8,7 +8,7 @@ export default defineCollection({
     label: 'Pages',
     icon: 'i-lucide-file-text',
     sortable: true,
-    searchable: true,
+    searchable: false,
     description: 'Generic webpages',
   },
 

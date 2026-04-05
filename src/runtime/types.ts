@@ -134,6 +134,7 @@ export interface CollectionOptions {
   icon?: string
   sortable?: boolean
   searchable?: boolean
+  searchColumns?: string[]
   defaultSort?: { field: string, order: 'asc' | 'desc' }
   perPage?: number
   public?: boolean

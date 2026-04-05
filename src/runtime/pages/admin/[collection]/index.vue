@@ -21,6 +21,14 @@ const collection = computed(() =>
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
 
+const searchPlaceholder = computed(() => {
+  const searchCols = collection.value?.options?.searchColumns
+  if (searchCols && searchCols.length > 0) {
+    return `Search ${searchCols.join(', ')}...`
+  }
+  return 'Search...'
+})
+
 // State — reset when switching collections so stale pagination/search don't carry over
 const search = ref('')
 const page = ref(1)
@@ -112,9 +120,10 @@ definePageMeta({
       <UDashboardToolbar>
         <template #left>
           <UInput
+            v-if="collection?.options?.searchable"
             v-model="search"
             icon="i-lucide-search"
-            placeholder="Search..."
+            :placeholder="searchPlaceholder"
             class="max-w-sm"
           />
         </template>
