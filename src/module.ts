@@ -4,9 +4,9 @@ import {
   createResolver,
   addServerHandler,
   addServerTemplate,
-  addTemplate,
   addTypeTemplate,
   addComponentsDir,
+  addComponent,
   extendPages,
   useLogger,
   addLayout,
@@ -14,9 +14,7 @@ import {
   addServerPlugin,
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
-import { resolve, dirname } from 'pathe'
-import type { CollectionDefinition } from './runtime/types'
-import { registerCollections, setDrizzleConnection } from './runtime/server/plugins/database'
+import { resolve } from 'pathe'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
@@ -24,33 +22,39 @@ export interface ModuleOptions {
   database?: string
 
   // Collection registration
-  collections?: Record<string, string>  // { name: path }
+  collections?: Record<string, string> // { name: path }
 
   // Admin panel configuration
   admin?: {
-    enabled?: boolean                   // Default: true
-    route?: string                      // Default: '/admin'
-    password?: string                   // Basic auth password
-    title?: string                      // Admin panel title
+    enabled?: boolean // Default: true
+    route?: string // Default: '/admin'
+    password?: string // Basic auth password
+    title?: string // Admin panel title
+  }
+
+  // Authentication configuration
+  auth?: {
+    handler?: string // Path to custom auth handler (server file)
+    loginPage?: string // Path to custom login form component (.vue file)
   }
 
   // API configuration
   api?: {
-    prefix?: string                     // Default: '/api/cms'
-    rateLimit?: number                  // Requests per minute
+    prefix?: string // Default: '/api/cms'
+    rateLimit?: number // Requests per minute
   }
 
   // Feature flags
   features?: {
-    versioning?: boolean                // Default: false
-    media?: boolean                     // Default: true
+    versioning?: boolean // Default: false
+    media?: boolean // Default: true
   }
 
   // Media configuration
   media?: {
-    uploadDir?: string                  // Default: 'public/uploads'
-    maxSize?: number                    // Max file size in bytes
-    allowedTypes?: string[]             // MIME types
+    uploadDir?: string // Default: 'public/uploads'
+    maxSize?: number // Max file size in bytes
+    allowedTypes?: string[] // MIME types
   }
 }
 
@@ -114,7 +118,6 @@ export default defineNuxtModule<ModuleOptions>({
 
     // logger.info(`Loaded ${collections.length} collection(s): ${collections.map(c => c.name).join(', ')}`)
 
-
     // If collections are defined, generate virtual server barrel export file
     if (options.collections && Object.keys(options.collections).length > 0) {
       const toPath = (p: string) => p.replace(/\\/g, '/')
@@ -130,8 +133,8 @@ export default defineNuxtModule<ModuleOptions>({
       addServerTemplate({
         filename: '#my-module/collections.mjs',
         getContents: () => `${colImports}
-        export const collections = [${colArray}]`
-      });
+export const collections = [${colArray}]`,
+      })
     }
 
     if (options.database) {
@@ -146,6 +149,20 @@ export default defineNuxtModule<ModuleOptions>({
         + 'The CMS API will not function until a Drizzle db connection is provided. '
         + 'Add `cms.database` to your nuxt.config.ts pointing to a file with a default export of your Drizzle db instance.',
       )
+    }
+
+    // Auth handler virtual template (stub or user-provided)
+    if (options.auth?.handler) {
+      addServerTemplate({
+        filename: '#my-module/auth-handler.mjs',
+        getContents: () => `export { default } from '${resolve(nuxt.options.rootDir, options.auth!.handler!)}'`,
+      })
+    }
+    else {
+      addServerTemplate({
+        filename: '#my-module/auth-handler.mjs',
+        getContents: () => 'export default null',
+      })
     }
 
     // // 4. Generate virtual module with collections
@@ -240,6 +257,15 @@ export default defineNuxtModule<ModuleOptions>({
         prefix: 'Cms',
       })
 
+      // Add custom login form component if provided
+      if (options.auth?.loginPage) {
+        addComponent({
+          name: 'CmsCustomLoginForm',
+          filePath: resolve(nuxt.options.rootDir, options.auth.loginPage),
+          priority: 10, // Ensure it takes precedence over any default component with the same name
+        })
+      }
+
       // Add admin layouts
       addLayout(
         resolver.resolve('./runtime/layouts/cms-admin.vue'),
@@ -259,12 +285,17 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     // 8. Store options in runtime config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     nuxt.options.runtimeConfig.cms = {
       admin: {
         password: options.admin?.password,
       },
+      auth: {
+        hasCustomHandler: !!options.auth?.handler,
+      },
     } as any
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     nuxt.options.runtimeConfig.public.cms = {
       admin: {
         route: options.admin?.route || '/admin',
@@ -273,7 +304,10 @@ export default defineNuxtModule<ModuleOptions>({
       api: {
         prefix: options.api?.prefix || '/api/cms',
       },
-    }
+      auth: {
+        hasCustomLoginPage: !!options.auth?.loginPage,
+      },
+    } as any
 
     // Do not add the extension since the `.ts` will be transpiled to `.mjs` after `npm run prepack`
     addPlugin(resolver.resolve('./runtime/plugin'))
@@ -285,16 +319,17 @@ export default defineNuxtModule<ModuleOptions>({
 /**
  * Generate TypeScript type definitions
  */
-function generateTypes(resolver: any): string {
+function generateTypes(resolver: ReturnType<typeof createResolver>): string {
   return `
 declare module '#cms' {
-  import type { CollectionDefinition } from '${resolver.resolve('./runtime/types')}'
+  import type { CollectionDefinition, CmsAuthVerifyFn, CmsLoginCredentials } from '${resolver.resolve('./runtime/types')}'
 
   export const collections: CollectionDefinition[]
   export function getCollection(name: string): CollectionDefinition | undefined
   export function getAllCollections(): CollectionDefinition[]
 
   export { defineCollection } from '${resolver.resolve('./runtime/composables/defineCollection')}'
+  export type { CmsAuthVerifyFn, CmsLoginCredentials }
 }
 
 declare module 'nuxt/schema' {
@@ -306,6 +341,9 @@ declare module 'nuxt/schema' {
       }
       api: {
         prefix: string
+      }
+      auth?: {
+        hasCustomLoginPage: boolean
       }
     }
   }

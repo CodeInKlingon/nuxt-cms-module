@@ -1,3 +1,5 @@
+import type { H3Event } from 'h3'
+
 // Collection definition
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface CollectionDefinition<T = any> {
@@ -204,3 +206,27 @@ export interface QueryOptions {
   filter?: Record<string, any>
   search?: string
 }
+
+// ---------------------------------------------------------------------------
+// Authentication
+// ---------------------------------------------------------------------------
+
+/**
+ * Credentials structure for CMS login.
+ * Users can augment this interface to include custom fields.
+ */
+export interface CmsLoginCredentials {
+  username?: string
+  email?: string
+  password?: string
+  [key: string]: unknown
+}
+
+/**
+ * Verify function signature for custom auth handlers.
+ * Return the user object to store in the session, or null to reject.
+ */
+export type CmsAuthVerifyFn = (
+  event: H3Event,
+  credentials: CmsLoginCredentials,
+) => Promise<Record<string, unknown> | null> | Record<string, unknown> | null

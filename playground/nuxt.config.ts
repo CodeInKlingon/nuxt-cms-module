@@ -15,6 +15,11 @@ export default defineNuxtConfig({
       pages: './cms/collections/pages.ts',
     },
 
+    auth: {
+      // handler: './server/cms-auth.ts',
+      // loginPage: './app/components/CustomLoginForm.vue',
+    },
+
     admin: {
       enabled: true,
       password: process.env.CMS_PASSWORD || 'admin123',

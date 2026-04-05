@@ -1,15 +1,31 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import { useRuntimeConfig } from '#imports'
+import authHandler from '#my-module/auth-handler.mjs'
+import type { CmsLoginCredentials } from '../../../types'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event) as any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const config = useRuntimeConfig(event) as Record<string, any>
 
+  const credentials = await readBody(event) as CmsLoginCredentials
+
+  // Custom auth handler path - user provides their own verification logic
+  if (authHandler) {
+    const user = await authHandler(event, credentials)
+    if (!user) {
+      throw createError({ statusCode: 401, message: 'Invalid credentials' })
+    }
+    await setUserSession(event, { user })
+    return { ok: true }
+  }
+
+  // Built-in password auth path
   const adminPassword = config.cms?.admin?.password
   if (!adminPassword) {
     throw createError({ statusCode: 503, message: 'Auth not configured' })
   }
 
-  const { password } = await readBody(event)
+  const { password } = credentials
   if (!password) {
     throw createError({ statusCode: 400, message: 'Password required' })
   }
