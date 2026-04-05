@@ -1,5 +1,5 @@
-import { defineCollection } from '../../src/runtime/composables/defineCollection'
-import { products } from '../server/database/schema'
+import { defineCollection } from '../../../src/runtime/composables/defineCollection'
+import { products } from '../../server/database/schema'
 
 export default defineCollection({
   name: 'products',

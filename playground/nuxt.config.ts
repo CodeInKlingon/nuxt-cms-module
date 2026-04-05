@@ -11,8 +11,8 @@ export default defineNuxtConfig({
     database: './server/database/index.ts',
 
     collections: {
-      products: './cms/products.ts',
-      pages: './cms/pages.ts',
+      products: './cms/collections/products.ts',
+      pages: './cms/collections/pages.ts',
     },
 
     admin: {

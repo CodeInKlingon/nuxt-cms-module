@@ -1,15 +1,15 @@
-import { defineCollection } from '../../src/runtime/composables/defineCollection'
-import { pages } from '../server/database/schema'
+import { defineCollection } from '../../../src/runtime/composables/defineCollection'
+import { pages } from '../../server/database/schema'
 
 export default defineCollection({
   name: 'pages',
   schema: pages,
-
   options: {
     label: 'Pages',
     icon: 'i-lucide-file-text',
     sortable: true,
     searchable: true,
+    description: 'Generic webpages',
   },
 
   dashboard: {
