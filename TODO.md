@@ -1,6 +1,6 @@
 
 - [x] collection search
-- [ ] sortable columns
+- [x] sortable columns
 - [ ] colection filtering
 - [ ] fix form view ui
 - [ ] defineWidget()

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { h, resolveComponent } from 'vue'
 import type { CollectionDefinition, PaginatedResult } from '../../../types'
 
 const route = useRoute()
@@ -7,6 +8,7 @@ const collectionName = computed(() => route.params.collection as string)
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
 const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
 const toast = useToast()
+const UButton = resolveComponent('UButton')
 
 // Fetch the full collections list once. The active collection is derived
 // synchronously via computed below so there is no async gap on navigation.
@@ -34,17 +36,29 @@ const search = ref('')
 const page = ref(1)
 const pageSize = ref(25)
 
+// Sorting state
+const sortField = ref<string | undefined>(undefined)
+const sortOrder = ref<'asc' | 'desc'>('asc')
+
 watch(collectionName, () => {
   search.value = ''
   page.value = 1
+  sortField.value = undefined
+  sortOrder.value = 'asc'
 })
 
 // Fetch data
 const { data: response, pending, refresh } = await useFetch<PaginatedResult>(
   () => `/api/cms/${collectionName.value}`,
   {
-    query: { page, perPage: pageSize, search },
-    watch: [collectionName, page, search],
+    query: {
+      page,
+      perPage: pageSize,
+      search,
+      sort: sortField,
+      order: sortOrder,
+    },
+    watch: [collectionName, page, search, sortField, sortOrder],
   },
 )
 
@@ -54,28 +68,82 @@ const total = computed(() => response.value?.total || 0)
 // Table columns — driven by dashboard.list.columns when defined,
 // otherwise fall back to the first 5 columns of the first record.
 const columns = computed(() => {
-  type Col = { accessorKey?: string, id?: string, header: string }
-
   const listColumns = collection.value?.dashboard?.list?.columns
-  let fieldCols: Col[]
+  const fieldCols = []
 
-  if (listColumns?.length) {
-    fieldCols = listColumns.map(col => ({
-      accessorKey: col.field,
-      header: col.label || col.field,
-    }))
+    if (listColumns?.length) {
+    for (const col of listColumns) {
+      // Determine if this column is sortable
+      // Only sortable when explicitly set to true
+      const isSortable = col.sortable === true
+      const label = col.label || col.field
+
+      fieldCols.push({
+        accessorKey: col.field,
+        header: isSortable
+          ? ({ column }: { column: { getIsSorted: () => false | 'asc' | 'desc', toggleSorting: (desc?: boolean) => void } }) => {
+              const isSorted = column.getIsSorted()
+              return h(UButton, {
+                color: 'neutral',
+                variant: 'ghost',
+                label,
+                icon: isSorted
+                  ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow')
+                  : 'i-lucide-arrow-up-down',
+                class: '-mx-2.5',
+                ui: { base: 'font-semibold' },
+                onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+              })
+            }
+          : label,
+        enableSorting: isSortable,
+      })
+    }
   }
   else {
     // Fallback: derive columns from the first record's keys (max 5)
+    // When falling back, columns are not sortable by default
     const firstItem = items.value[0]
     const keys = firstItem
       ? Object.keys(firstItem).filter(k => k !== 'id').slice(0, 5)
       : []
-    fieldCols = keys.map(key => ({ accessorKey: key, header: key }))
+    for (const key of keys) {
+      fieldCols.push({
+        accessorKey: key,
+        header: key,
+        enableSorting: false,
+      })
+    }
   }
 
-  return [...fieldCols, { id: 'actions', header: '' }] as Col[]
+  // Add actions column
+  fieldCols.push({
+    id: 'actions',
+    header: '',
+    enableSorting: false,
+  })
+
+  return fieldCols
 })
+
+// Handle sort changes from the table
+const onSortingChange = (sorting: { id?: string, desc?: boolean }[]) => {
+  if (sorting.length === 0) {
+    sortField.value = undefined
+    sortOrder.value = 'asc'
+    return
+  }
+
+  const sort = sorting[0]
+  if (!sort) {
+    sortField.value = undefined
+    sortOrder.value = 'asc'
+    return
+  }
+
+  sortField.value = sort.id ?? undefined
+  sortOrder.value = sort.desc ? 'desc' : 'asc'
+}
 
 // Delete item
 const deleteItem = async (id: string) => {
@@ -135,6 +203,7 @@ definePageMeta({
         :data="items"
         :columns="columns"
         :loading="pending"
+        :sorting="sortField ? [{ id: sortField, desc: sortOrder === 'desc' }] : []"
         :ui="{
           base: 'table-fixed border-separate border-spacing-0 w-full',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
@@ -142,6 +211,7 @@ definePageMeta({
           th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
           td: 'border-b border-default',
         }"
+        @sorting-change="onSortingChange"
       >
         <template #empty>
           <div class="flex flex-col items-center justify-center py-12 gap-3 text-center">

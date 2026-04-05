@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { eq, like, or } from 'drizzle-orm'
+import { eq, like, or, asc, desc } from 'drizzle-orm'
 import type { CollectionDefinition, CrudContext, PaginatedResult, QueryOptions } from '../../types'
 import { getDrizzleConnection, getCollectionSchema } from '../utils/drizzle-adapter'
 import { executeHooks } from './hooks'
@@ -35,7 +35,7 @@ export class CrudService {
   }
 
   /**
-   * Find many records with pagination, filtering, and search
+   * Find many records with pagination, filtering, search, and sorting
    */
   async findMany(query: QueryOptions = {}): Promise<PaginatedResult> {
     const {
@@ -43,6 +43,8 @@ export class CrudService {
       perPage = this.collection.options?.perPage || 25,
       filter,
       search,
+      sort,
+      order = 'asc',
     } = query
 
     let dbQuery = this.db.select().from(this.schema)
@@ -59,7 +61,9 @@ export class CrudService {
     }
 
     // Apply sorting
-    // TODO: Implement sorting based on sort field
+    if (sort) {
+      dbQuery = this.applySorting(dbQuery, sort, order)
+    }
 
     // Apply pagination
     const offset = (Number(page) - 1) * Number(perPage)
@@ -244,5 +248,32 @@ export class CrudService {
     }
 
     return query.where(or(...conditions))
+  }
+
+  /**
+   * Apply sorting to the query based on the sort field and order
+   */
+  private applySorting(query: any, sortField: string, order: 'asc' | 'desc' = 'asc') {
+    // Validate that the sort field exists in the schema
+    if (!(sortField in this.schema)) {
+      throw new Error(
+        `Sort field "${sortField}" not found in schema for collection "${this.collection.name}"`,
+      )
+    }
+
+    // Check if the field is marked as sortable in the dashboard config
+    const listColumns = this.collection.dashboard?.list?.columns
+    if (listColumns && listColumns.length > 0) {
+      const columnConfig = listColumns.find((col) => col.field === sortField)
+      if (columnConfig && columnConfig.sortable === false) {
+        throw new Error(
+          `Field "${sortField}" is not sortable in collection "${this.collection.name}"`,
+        )
+      }
+    }
+
+    // Apply the sort order
+    const sortFn = order === 'desc' ? desc : asc
+    return query.orderBy(sortFn(this.schema[sortField]))
   }
 }
