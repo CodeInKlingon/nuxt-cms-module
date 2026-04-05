@@ -2,6 +2,7 @@
 - [x] collection search
 - [x] sortable columns
 - [ ] colection filtering
+- [ ] test & verify relation field
 - [ ] fix form view ui
 - [ ] defineWidget()
 - [ ] custom auth handling
