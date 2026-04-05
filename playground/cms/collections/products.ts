@@ -22,6 +22,16 @@ export default defineCollection({
         { field: 'price', label: 'Price (cents)', sortable: true },
         { field: 'active', label: 'Active' },
       ],
+      filters: [
+        {
+          field: 'active',
+          label: 'Status',
+          options: [
+            { label: 'Active', value: true },
+            { label: 'Inactive', value: false },
+          ],
+        },
+      ],
     },
 
     form: {
