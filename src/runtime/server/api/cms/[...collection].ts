@@ -43,7 +43,24 @@ export default defineEventHandler(async (event) => {
         }
         else {
           const query = getQuery(event)
-          return await crudService.findMany(query as any)
+          // Extract flattened filter params (e.g., filter_active, filter_status)
+          // and build a filter object
+          const filter: Record<string, any> = {}
+          for (const [key, value] of Object.entries(query)) {
+            if (key.startsWith('filter_')) {
+              // Handle both filter_field and filter_field[] (for arrays)
+              const fieldName = key.slice(7).replace(/\[\]$/, '') // Remove 'filter_' prefix and optional '[]'
+              filter[fieldName] = value
+            }
+          }
+          return await crudService.findMany({
+            page: query.page,
+            perPage: query.perPage,
+            sort: query.sort,
+            order: query.order,
+            search: query.search,
+            filter: Object.keys(filter).length > 0 ? filter : undefined,
+          } as any)
         }
 
       case 'POST':

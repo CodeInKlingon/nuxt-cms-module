@@ -20,10 +20,27 @@ export interface DashboardConfig {
 
 // --- List view ---
 
+/** A single option for a filter dropdown. */
+export interface FilterOption {
+  label: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any
+}
+
+/** Configuration for a single filter in the list view. */
+export interface ListFilterConfig {
+  field: string
+  label?: string
+  options: FilterOption[]
+  /** Allow selecting multiple values (OR logic). Default: false. */
+  multiple?: boolean
+}
+
 /** Configuration for the collection list/table view. */
 export interface ListConfig {
   columns: ListColumnConfig[]
-  // Future: searchFields, filters, rowActions, etc.
+  filters?: ListFilterConfig[]
+  // Future: searchFields, rowActions, etc.
 }
 
 /** A single column definition in the list view. */

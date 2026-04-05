@@ -40,25 +40,48 @@ const pageSize = ref(25)
 const sortField = ref<string | undefined>(undefined)
 const sortOrder = ref<'asc' | 'desc'>('asc')
 
+// Filter state — keyed by field name
+const activeFilters = ref<Record<string, any>>({})
+
+// Available filters from collection config
+const availableFilters = computed(() => {
+  return collection.value?.dashboard?.list?.filters ?? []
+})
+
 watch(collectionName, () => {
   search.value = ''
   page.value = 1
   sortField.value = undefined
   sortOrder.value = 'asc'
+  activeFilters.value = {}
+})
+
+// Build query params including flattened filters
+const queryParams = computed(() => {
+  const params: Record<string, any> = {
+    page: page.value,
+    perPage: pageSize.value,
+  }
+  if (search.value) params.search = search.value
+  if (sortField.value) {
+    params.sort = sortField.value
+    params.order = sortOrder.value
+  }
+  // Flatten filter fields into individual query params
+  for (const [key, value] of Object.entries(activeFilters.value)) {
+    if (value !== undefined && value !== null && value !== '') {
+      params[`filter_${key}`] = value
+    }
+  }
+  return params
 })
 
 // Fetch data
 const { data: response, pending, refresh } = await useFetch<PaginatedResult>(
   () => `/api/cms/${collectionName.value}`,
   {
-    query: {
-      page,
-      perPage: pageSize,
-      search,
-      sort: sortField,
-      order: sortOrder,
-    },
-    watch: [collectionName, page, search, sortField, sortOrder],
+    query: queryParams,
+    watch: [collectionName, queryParams],
   },
 )
 
@@ -187,13 +210,28 @@ definePageMeta({
 
       <UDashboardToolbar>
         <template #left>
-          <UInput
-            v-if="collection?.options?.searchable"
-            v-model="search"
-            icon="i-lucide-search"
-            :placeholder="searchPlaceholder"
-            class="max-w-sm"
-          />
+          <div class="flex items-center gap-3">
+            <UInput
+              v-if="collection?.options?.searchable"
+              v-model="search"
+              icon="i-lucide-search"
+              :placeholder="searchPlaceholder"
+              class="max-w-sm"
+            />
+            <!-- Filter dropdowns -->
+            <USelectMenu
+              v-for="filterConfig in availableFilters"
+              :key="filterConfig.field"
+              v-model="activeFilters[filterConfig.field]"
+              :placeholder="filterConfig.label || filterConfig.field"
+              :items="filterConfig.options"
+              :multiple="filterConfig.multiple"
+              value-key="value"
+              label-key="label"
+              clear
+              class="w-44"
+            />
+          </div>
         </template>
       </UDashboardToolbar>
     </template>

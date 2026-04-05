@@ -120,4 +120,43 @@ describe('defineCollection', () => {
       })
     }).toThrow('must have a schema')
   })
+
+  it('should support list filters in dashboard config', () => {
+    const collection = defineCollection({
+      name: 'test',
+      schema: {} as any,
+      dashboard: {
+        list: {
+          columns: [
+            { field: 'name', label: 'Name', sortable: true },
+            { field: 'status', label: 'Status' },
+          ],
+          filters: [
+            {
+              field: 'status',
+              label: 'Status Filter',
+              options: [
+                { label: 'Active', value: 'active' },
+                { label: 'Inactive', value: 'inactive' },
+              ],
+            },
+            {
+              field: 'category',
+              label: 'Category',
+              multiple: true,
+              options: [
+                { label: 'Electronics', value: 'electronics' },
+                { label: 'Clothing', value: 'clothing' },
+              ],
+            },
+          ],
+        },
+      },
+    })
+
+    expect(collection.dashboard?.list?.filters).toHaveLength(2)
+    expect(collection.dashboard?.list?.filters?.[0]?.field).toBe('status')
+    expect(collection.dashboard?.list?.filters?.[0]?.options).toHaveLength(2)
+    expect(collection.dashboard?.list?.filters?.[1]?.multiple).toBe(true)
+  })
 })

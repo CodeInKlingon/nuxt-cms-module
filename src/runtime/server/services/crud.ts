@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { eq, like, or, asc, desc } from 'drizzle-orm'
+import { eq, like, or, and, asc, desc, inArray } from 'drizzle-orm'
 import type { CollectionDefinition, CrudContext, PaginatedResult, QueryOptions } from '../../types'
 import { getDrizzleConnection, getCollectionSchema } from '../utils/drizzle-adapter'
 import { executeHooks } from './hooks'
@@ -50,7 +50,9 @@ export class CrudService {
     let dbQuery = this.db.select().from(this.schema)
 
     // Apply filters
-    // TODO: Implement filtering based on filter object
+    if (filter && Object.keys(filter).length > 0) {
+      dbQuery = this.applyFilters(dbQuery, filter)
+    }
 
     // Apply search
     if (search && this.collection.options?.searchable) {
@@ -211,8 +213,13 @@ export class CrudService {
   /**
    * Count total records with optional filters
    */
-  private async count(filter?: any, search?: string): Promise<number> {
+  private async count(filter?: Record<string, any>, search?: string): Promise<number> {
     let countQuery = this.db.select().from(this.schema)
+
+    // Apply filters
+    if (filter && Object.keys(filter).length > 0) {
+      countQuery = this.applyFilters(countQuery, filter)
+    }
 
     // Apply search filter to count as well
     if (search && this.collection.options?.searchable) {
@@ -222,7 +229,6 @@ export class CrudService {
       }
     }
 
-    // TODO: Implement proper count with filters
     const results = await countQuery
     return results.length
   }
@@ -275,5 +281,85 @@ export class CrudService {
     // Apply the sort order
     const sortFn = order === 'desc' ? desc : asc
     return query.orderBy(sortFn(this.schema[sortField]))
+  }
+
+  /**
+   * Apply filter conditions to the query
+   */
+  private applyFilters(query: any, filter: Record<string, any>) {
+    const conditions = Object.entries(filter)
+      .map(([field, value]) => {
+        // Skip if field doesn't exist in schema
+        if (!(field in this.schema)) {
+          console.warn(`Filter field "${field}" not found in schema for collection "${this.collection.name}"`)
+          return null
+        }
+
+        // Skip empty values
+        if (value === undefined || value === null || value === '') {
+          return null
+        }
+
+        // Coerce value types based on schema column type
+        const coercedValue = this.coerceFilterValue(value, field)
+
+        // Handle array values (OR logic for multiple selection)
+        if (Array.isArray(coercedValue) && coercedValue.length > 0) {
+          return inArray(this.schema[field], coercedValue)
+        }
+
+        // Handle single value
+        return eq(this.schema[field], coercedValue)
+      })
+      .filter((condition): condition is ReturnType<typeof eq> => condition !== null)
+
+    if (conditions.length === 0) {
+      return query
+    }
+
+    return query.where(and(...conditions))
+  }
+
+  /**
+   * Coerce filter value to match the schema column type
+   */
+  private coerceFilterValue(value: any, field: string): any {
+    // Handle arrays recursively
+    if (Array.isArray(value)) {
+      return value.map((v) => this.coerceFilterValue(v, field))
+    }
+
+    // Get the column from schema to check its type
+    const column = this.schema[field]
+    if (!column) return value
+
+    // Check column type and coerce accordingly
+    const columnType = column.getSQLType?.() || ''
+
+    // Boolean fields (SQLite stores booleans as integers with mode: 'boolean')
+    if (columnType === 'boolean' || columnType.includes('bool')) {
+      if (typeof value === 'string') {
+        return value.toLowerCase() === 'true' ? 1 : 0
+      }
+      return value ? 1 : 0
+    }
+
+    // Integer fields - check if this might be a boolean column by config
+    if (columnType === 'integer' || columnType === 'int' || columnType === 'serial') {
+      // Check if value looks like a boolean string
+      if (typeof value === 'string' && (value.toLowerCase() === 'true' || value.toLowerCase() === 'false')) {
+        return value.toLowerCase() === 'true' ? 1 : 0
+      }
+      const num = parseInt(value, 10)
+      return isNaN(num) ? value : num
+    }
+
+    // Real/Float fields
+    if (columnType === 'real' || columnType === 'float' || columnType === 'double' || columnType === 'decimal') {
+      const num = parseFloat(value)
+      return isNaN(num) ? value : num
+    }
+
+    return value
   }
 }
