@@ -1,11 +1,11 @@
 
-- collection search
-- sortable columns
-- colection filtering
-- fix form view ui
-- defineWidget()
-- custom auth handling
-- block system
+- [x] collection search
+- [ ] sortable columns
+- [ ] colection filtering
+- [ ] fix form view ui
+- [ ] defineWidget()
+- [ ] custom auth handling
+- [ ] block system
     - provide block drizzle schema factory function
     - defineBlock() macro
     - block editor
