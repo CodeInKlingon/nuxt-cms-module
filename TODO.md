@@ -1,12 +1,12 @@
 
 - [x] collection search
 - [x] sortable columns
-- [ ] colection filtering
+- [x] colection filtering
 - [ ] test and verify collection pagination
 - [ ] test & verify relation field
 - [ ] fix form view ui
 - [ ] defineWidget()
-- [ ] custom auth handling
+- [x] custom auth handling
 - [ ] block system
     - provide block drizzle schema factory function
     - defineBlock() macro
