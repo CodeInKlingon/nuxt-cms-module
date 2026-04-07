@@ -262,6 +262,12 @@ export const collections = [${colArray}]`,
         prefix: 'Cms',
       })
 
+      // Add RenderBlocks component without prefix for frontend use
+      addComponent({
+        name: 'RenderBlocks',
+        filePath: resolver.resolve('./runtime/components/RenderBlocks.vue'),
+      })
+
       // Add custom login form component if provided
       if (options.auth?.loginPage) {
         addComponent({
@@ -363,6 +369,7 @@ function setupWidgets(
     { name: 'linkField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'blocksField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'useBlockComponents', from: resolver.resolve('./runtime/composables/useBlockComponents') },
+    { name: 'useRenderBlocks', from: resolver.resolve('./runtime/composables/useRenderBlocks') },
   ])
 
   // Collect user-defined widgets
@@ -496,14 +503,16 @@ function generateTypes(resolver: ReturnType<typeof createResolver>): string {
   return `
 declare module '#cms' {
   import type { CollectionDefinition, CmsAuthVerifyFn, CmsLoginCredentials } from '${resolver.resolve('./runtime/types')}'
-  import type { defineWidget, textField, numberField, textareaField, booleanField, selectField } from '${resolver.resolve('./runtime/widgets/built-ins')}'
+  import type { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField } from '${resolver.resolve('./runtime/widgets/built-ins')}'
+  import type { useRenderBlocks } from '${resolver.resolve('./runtime/composables/useRenderBlocks')}'
 
   export const collections: CollectionDefinition[]
   export function getCollection(name: string): CollectionDefinition | undefined
   export function getAllCollections(): CollectionDefinition[]
 
   export { defineCollection } from '${resolver.resolve('./runtime/composables/defineCollection')}'
-  export { defineWidget, textField, numberField, textareaField, booleanField, selectField }
+  export { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField }
+  export { useRenderBlocks }
   export type { CmsAuthVerifyFn, CmsLoginCredentials }
 }
 
