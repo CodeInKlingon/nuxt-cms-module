@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FormFieldConfig } from '../../types'
+import type { FormFieldConfig } from '../types'
 
 const props = defineProps<{
   field: FormFieldConfig
@@ -25,7 +25,7 @@ const label = computed(() => {
     .replace(/([A-Z])/g, ' $1')
     .replace(/_/g, ' ')
     .replace(/^\s/, '')
-    .replace(/^./, s => s.toUpperCase())
+    .replace(/^./, (s: string) => s.toUpperCase())
 })
 </script>
 

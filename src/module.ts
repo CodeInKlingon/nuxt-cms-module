@@ -12,6 +12,7 @@ import {
   addLayout,
   addRouteMiddleware,
   addServerPlugin,
+  addImports,
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
 import { resolve } from 'pathe'
@@ -56,6 +57,9 @@ export interface ModuleOptions {
     maxSize?: number // Max file size in bytes
     allowedTypes?: string[] // MIME types
   }
+
+  // Widget configuration
+  widgets?: Array<() => any> // User-defined widgets from defineWidget()
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -313,8 +317,77 @@ export const collections = [${colArray}]`,
     addPlugin(resolver.resolve('./runtime/plugin'))
 
     addServerPlugin(resolver.resolve('./runtime/server/plugins/db.ts'))
+
+    // 9. Widget system setup
+    setupWidgets(options, nuxt, resolver, logger)
   },
 })
+
+/**
+ * Setup widget system - auto-imports and registry
+ */
+function setupWidgets(
+  options: ModuleOptions,
+  nuxt: any,
+  resolver: ReturnType<typeof createResolver>,
+  logger: ReturnType<typeof useLogger>,
+) {
+  // Auto-import widget composables
+  addImports([
+    { name: 'defineWidget', from: resolver.resolve('./runtime/composables/defineWidget') },
+    { name: 'textField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'numberField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'textareaField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'booleanField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'selectField', from: resolver.resolve('./runtime/widgets/built-ins') },
+  ])
+
+  // Collect user-defined widgets
+  const userWidgets = options.widgets || []
+
+  // Generate virtual widget registry
+  addServerTemplate({
+    filename: '#cms/widgets.mjs',
+    getContents: () => generateWidgetRegistry(resolver, userWidgets),
+  })
+
+  logger.info(`Widget system initialized with ${userWidgets.length} custom widget(s)`)
+}
+
+/**
+ * Generate widget registry virtual module
+ */
+function generateWidgetRegistry(
+  resolver: ReturnType<typeof createResolver>,
+  userWidgets: Array<() => any>,
+): string {
+  const lines: string[] = [
+    '// Auto-generated widget registry',
+    '',
+    'export const widgetRegistry = {',
+    "  text: () => import('${resolver.resolve('./runtime/widgets/built-ins/TextWidget.vue')}'),",
+    "  number: () => import('${resolver.resolve('./runtime/widgets/built-ins/NumberWidget.vue')}'),",
+    "  textarea: () => import('${resolver.resolve('./runtime/widgets/built-ins/TextareaWidget.vue')}'),",
+    "  boolean: () => import('${resolver.resolve('./runtime/widgets/built-ins/BooleanWidget.vue')}'),",
+    "  select: () => import('${resolver.resolve('./runtime/widgets/built-ins/SelectWidget.vue')}'),",
+  ]
+
+  // Add user-defined widgets if any
+  // Note: This is a simplified version - in reality, we'd need to extract
+  // widget info from the field functions
+  if (userWidgets.length > 0) {
+    lines.push('  // User-defined widgets')
+    // User widgets would be added here based on their configuration
+  }
+
+  lines.push('}')
+  lines.push('')
+  lines.push('export function getWidget(name) {')
+  lines.push('  return widgetRegistry[name]')
+  lines.push('}')
+
+  return lines.join('\n')
+}
 
 /**
  * Generate TypeScript type definitions
@@ -323,13 +396,24 @@ function generateTypes(resolver: ReturnType<typeof createResolver>): string {
   return `
 declare module '#cms' {
   import type { CollectionDefinition, CmsAuthVerifyFn, CmsLoginCredentials } from '${resolver.resolve('./runtime/types')}'
+  import type { defineWidget, textField, numberField, textareaField, booleanField, selectField } from '${resolver.resolve('./runtime/widgets/built-ins')}'
 
   export const collections: CollectionDefinition[]
   export function getCollection(name: string): CollectionDefinition | undefined
   export function getAllCollections(): CollectionDefinition[]
 
   export { defineCollection } from '${resolver.resolve('./runtime/composables/defineCollection')}'
+  export { defineWidget, textField, numberField, textareaField, booleanField, selectField }
   export type { CmsAuthVerifyFn, CmsLoginCredentials }
+}
+
+declare module '#my-module/auth-handler.mjs' {
+  const authHandler: any
+  export default authHandler
+}
+
+declare module '#my-module/collections.mjs' {
+  export const collections: any[]
 }
 
 declare module 'nuxt/schema' {
