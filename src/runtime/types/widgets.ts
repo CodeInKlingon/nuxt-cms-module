@@ -113,7 +113,7 @@ export interface LinkValue {
 }
 
 export interface LinkOptions extends BaseFieldOptions {
-  default?: LinkValue
+  default?: LinkValue | (() => LinkValue)
   allowExternal?: boolean
   allowInternal?: boolean
 }

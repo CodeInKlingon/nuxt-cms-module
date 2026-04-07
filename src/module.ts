@@ -340,6 +340,7 @@ function setupWidgets(
     { name: 'textareaField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'booleanField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'selectField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'linkField', from: resolver.resolve('./runtime/widgets/built-ins') },
   ])
 
   // Collect user-defined widgets

@@ -96,6 +96,7 @@ export type WidgetType =
   | 'json'
   | 'array'
   | 'custom'
+  | 'random-boolean'
 
 /** A single field entry inside a form section. */
 export interface FormFieldConfig {

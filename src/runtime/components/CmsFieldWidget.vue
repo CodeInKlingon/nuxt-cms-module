@@ -27,6 +27,13 @@ const label = computed(() => {
     .replace(/^\s/, '')
     .replace(/^./, (s: string) => s.toUpperCase())
 })
+
+// Check if this widget type is supported by the new widget system
+const supportedWidgets = ['text', 'number', 'textarea', 'boolean', 'select', 'link', 'random-boolean']
+const useNewWidgetSystem = computed(() => {
+  const widget = props.field.widget || 'text'
+  return supportedWidgets.includes(widget)
+})
 </script>
 
 <template>
@@ -42,32 +49,19 @@ const label = computed(() => {
     </UFormField>
   </template>
 
-  <!-- text / default -->
+  <!-- Use new widget system for supported widgets -->
   <UFormField
-    v-else-if="!field.widget || field.widget === 'text'"
+    v-else-if="useNewWidgetSystem"
     :label="label"
     :required="field.required"
     :error="error"
     :help="field.description"
   >
-    <UInput
-      v-model="value"
-      :placeholder="label"
-    />
-  </UFormField>
-
-  <!-- textarea -->
-  <UFormField
-    v-else-if="field.widget === 'textarea'"
-    :label="label"
-    :required="field.required"
-    :error="error"
-    :help="field.description"
-  >
-    <UTextarea
-      v-model="value"
-      :placeholder="label"
-      :rows="(field.props?.rows as number | undefined) ?? 5"
+    <CmsWidgetRenderer
+      :widget="field.widget || 'text'"
+      :model-value="value"
+      :options="field.props"
+      @update:model-value="value = $event"
     />
   </UFormField>
 
@@ -84,31 +78,6 @@ const label = computed(() => {
       :placeholder="label"
       :rows="(field.props?.rows as number | undefined) ?? 8"
     />
-  </UFormField>
-
-  <!-- number -->
-  <UFormField
-    v-else-if="field.widget === 'number'"
-    :label="label"
-    :required="field.required"
-    :error="error"
-    :help="field.description"
-  >
-    <UInput
-      v-model.number="value"
-      type="number"
-      :placeholder="label"
-    />
-  </UFormField>
-
-  <!-- boolean -->
-  <UFormField
-    v-else-if="field.widget === 'boolean'"
-    :label="label"
-    :error="error"
-    :help="field.description"
-  >
-    <USwitch v-model="value" />
   </UFormField>
 
   <!-- date -->
@@ -136,21 +105,6 @@ const label = computed(() => {
     <UInput
       v-model="value"
       type="datetime-local"
-    />
-  </UFormField>
-
-  <!-- select -->
-  <UFormField
-    v-else-if="field.widget === 'select'"
-    :label="label"
-    :required="field.required"
-    :error="error"
-    :help="field.description"
-  >
-    <USelect
-      v-model="value"
-      :items="field.props?.options ?? []"
-      :placeholder="`Select ${label}`"
     />
   </UFormField>
 

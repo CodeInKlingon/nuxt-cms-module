@@ -57,10 +57,22 @@ function inferPropType<T>(): any {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getDefaultValue<T>(options: any, defaultOptions?: any): T {
   // If explicit default provided in options, use it
-  if (options?.default !== undefined) return options.default
+  if (options?.default !== undefined) {
+    // Handle factory functions
+    if (typeof options.default === 'function') {
+      return options.default()
+    }
+    return options.default
+  }
 
   // Otherwise fall back to widget's defaultOptions
-  if (defaultOptions?.default !== undefined) return defaultOptions.default
+  if (defaultOptions?.default !== undefined) {
+    // Handle factory functions
+    if (typeof defaultOptions.default === 'function') {
+      return defaultOptions.default()
+    }
+    return defaultOptions.default
+  }
 
   // Return sensible defaults based on type detection
   return getTypeDefault<T>(options)

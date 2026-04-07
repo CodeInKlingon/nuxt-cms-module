@@ -1,5 +1,5 @@
 <template>
-  <UToggle
+  <USwitch
     :model-value="modelValue"
     :required="required"
     @update:model-value="$emit('update:modelValue', $event)"
