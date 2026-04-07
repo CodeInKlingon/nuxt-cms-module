@@ -16,6 +16,7 @@ export const pages = sqliteTable('pages', {
   title: text('title').notNull(),
   slug: text('slug').notNull().unique(),
   content: text('content'),
+  blocks: text('blocks', { mode: 'json' }).$defaultFn(() => '[]'),
   published: integer('published', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),

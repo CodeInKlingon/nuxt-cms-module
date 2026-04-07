@@ -4,7 +4,9 @@ const router = useRouter()
 const { fetch: refreshSession } = useUserSession()
 const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
 const title = computed(() => config.public.cms.admin?.title || 'CMS Admin')
+const hasCustomLoginPage = computed(() => config.public.cms.auth?.hasCustomLoginPage ?? false)
 
+const username = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
@@ -16,14 +18,14 @@ const login = async () => {
   try {
     await $fetch('/api/cms/auth/login', {
       method: 'POST',
-      body: { password: password.value },
+      body: { username: username.value, password: password.value },
     })
 
     await refreshSession()
     router.push(adminRoute.value)
   }
   catch {
-    error.value = 'Invalid password. Please try again.'
+    error.value = 'Invalid credentials. Please try again.'
   }
   finally {
     loading.value = false
@@ -51,31 +53,54 @@ definePageMeta({
       </div>
 
       <UCard>
-        <form class="space-y-4" @submit.prevent="login">
-          <UFormField
-            label="Password"
-            :error="error"
-          >
-            <UInput
-              v-model="password"
-              type="password"
-              placeholder="Enter admin password"
-              size="lg"
-              autofocus
-              icon="i-lucide-lock"
-            />
-          </UFormField>
+        <slot name="form">
+          <!-- Custom login form component (only if user provided one) -->
+          <!-- Custom component is responsible for its own form submission -->
+          <CmsCustomLoginForm v-if="hasCustomLoginPage" />
 
-          <UButton
-            type="submit"
-            block
-            size="lg"
-            :loading="loading"
-            icon="i-lucide-log-in"
+          <!-- Default built-in form -->
+          <form
+            v-else
+            class="space-y-4"
+            @submit.prevent="login"
           >
-            Sign In
-          </UButton>
-        </form>
+            <UFormField
+              label="Username"
+            >
+              <UInput
+                v-model="username"
+                type="text"
+                placeholder="Enter username"
+                size="lg"
+                autofocus
+                icon="i-lucide-user"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Password"
+              :error="error"
+            >
+              <UInput
+                v-model="password"
+                type="password"
+                placeholder="Enter password"
+                size="lg"
+                icon="i-lucide-lock"
+              />
+            </UFormField>
+
+            <UButton
+              type="submit"
+              block
+              size="lg"
+              :loading="loading"
+              icon="i-lucide-log-in"
+            >
+              Sign In
+            </UButton>
+          </form>
+        </slot>
       </UCard>
     </div>
   </div>

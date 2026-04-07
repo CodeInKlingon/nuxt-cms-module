@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FormSection } from '../../types'
+import type { FormSection } from '../types'
 
 defineProps<{
   section: FormSection

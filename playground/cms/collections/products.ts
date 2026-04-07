@@ -75,7 +75,7 @@ export default defineCollection({
                 {
                   field: 'active',
                   label: 'Active',
-                  widget: 'boolean',
+                  widget: 'random-boolean',
                   defaultValue: true,
                 },
               ],

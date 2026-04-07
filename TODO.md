@@ -1,15 +1,15 @@
 
 - [x] collection search
 - [x] sortable columns
-- [ ] colection filtering
+- [x] colection filtering
+- [ ] list view custom column rendering (badge coimponent for enums ect)
 - [ ] test and verify collection pagination
 - [ ] test & verify relation field
 - [ ] fix form view ui
 - [ ] defineWidget()
-- [ ] custom auth handling
+- [x] custom auth handling
 - [ ] block system
-    - provide block drizzle schema factory function
-    - defineBlock() macro
+    - block component prop helper functions textField()
     - block editor
         - re-arrange (dnd)
         - prop form

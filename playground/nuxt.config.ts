@@ -1,3 +1,5 @@
+import { randomBooleanWidget } from './cms/widgets/random-boolean'
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
@@ -13,6 +15,15 @@ export default defineNuxtConfig({
     collections: {
       products: './cms/collections/products.ts',
       pages: './cms/collections/pages.ts',
+    },
+
+    widgets: [
+      randomBooleanWidget,
+    ],
+
+    auth: {
+      // handler: './server/cms-auth.ts',
+      // loginPage: './app/components/CustomLoginForm.vue',
     },
 
     admin: {
