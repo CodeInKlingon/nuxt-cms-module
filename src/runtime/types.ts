@@ -8,6 +8,14 @@ export interface CollectionDefinition<T = any> {
   dashboard?: DashboardConfig
   options?: CollectionOptions
   hooks?: CollectionHooks
+  blocks?: CollectionBlocksConfig
+}
+
+// Collection blocks configuration
+export interface CollectionBlocksConfig {
+  enabled: boolean
+  allowedBlocks?: string[] // Block names allowed in this collection
+  fieldName?: string // DB column name (default: 'blocks')
 }
 
 // ---------------------------------------------------------------------------
@@ -97,6 +105,7 @@ export type WidgetType =
   | 'array'
   | 'custom'
   | 'random-boolean'
+  | 'blocks'
 
 /** A single field entry inside a form section. */
 export interface FormFieldConfig {

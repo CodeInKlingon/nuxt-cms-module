@@ -77,6 +77,7 @@ const widgetComponent = computed(() => {
     boolean: defineAsyncComponent(() => import('../widgets/built-ins/BooleanWidget.vue')),
     select: defineAsyncComponent(() => import('../widgets/built-ins/SelectWidget.vue')),
     link: defineAsyncComponent(() => import('../widgets/built-ins/LinkWidget.vue')),
+    blocks: defineAsyncComponent(() => import('../widgets/built-ins/BlocksWidget.vue')),
   }
 
   // Support for custom widgets from user land

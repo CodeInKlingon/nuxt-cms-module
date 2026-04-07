@@ -29,7 +29,7 @@ const label = computed(() => {
 })
 
 // Check if this widget type is supported by the new widget system
-const supportedWidgets = ['text', 'number', 'textarea', 'boolean', 'select', 'link', 'random-boolean']
+const supportedWidgets = ['text', 'number', 'textarea', 'boolean', 'select', 'link', 'random-boolean', 'blocks']
 const useNewWidgetSystem = computed(() => {
   const widget = props.field.widget || 'text'
   return supportedWidgets.includes(widget)
@@ -167,6 +167,20 @@ const useNewWidgetSystem = computed(() => {
       v-model="value"
       :placeholder="`Comma-separated values for ${label}`"
       :rows="3"
+    />
+  </UFormField>
+
+  <!-- blocks -->
+  <UFormField
+    v-else-if="field.widget === 'blocks'"
+    :label="label"
+    :required="field.required"
+    :error="error"
+    :help="field.description"
+  >
+    <CmsBlockEditor
+      v-model="value"
+      :allowed-blocks="field.props?.allowedBlocks"
     />
   </UFormField>
 

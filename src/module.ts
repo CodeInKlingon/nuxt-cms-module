@@ -13,6 +13,7 @@ import {
   addRouteMiddleware,
   addServerPlugin,
   addImports,
+  addTemplate,
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
 import { resolve } from 'pathe'
@@ -320,6 +321,25 @@ export const collections = [${colArray}]`,
 
     // 9. Widget system setup
     setupWidgets(options, nuxt, resolver, logger)
+
+    // 10. Block components setup
+    setupBlockComponents(options, nuxt, resolver, logger)
+
+    // 11. Add Vite alias for virtual modules
+    const blocksPath = nuxt.options.buildDir + '/#cms/blocks.mjs'
+    nuxt.options.vite = nuxt.options.vite || {}
+    nuxt.options.vite.resolve = nuxt.options.vite.resolve || {}
+    nuxt.options.vite.resolve.alias = nuxt.options.vite.resolve.alias || {}
+    
+    if (Array.isArray(nuxt.options.vite.resolve.alias)) {
+      nuxt.options.vite.resolve.alias.push({
+        find: /^#cms\/blocks$/,
+        replacement: blocksPath,
+      })
+    }
+    else {
+      (nuxt.options.vite.resolve.alias as Record<string, string>)['#cms/blocks'] = blocksPath
+    }
   },
 })
 
@@ -341,6 +361,8 @@ function setupWidgets(
     { name: 'booleanField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'selectField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'linkField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'blocksField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'useBlockComponents', from: resolver.resolve('./runtime/composables/useBlockComponents') },
   ])
 
   // Collect user-defined widgets
@@ -391,6 +413,83 @@ function generateWidgetRegistry(
 }
 
 /**
+ * Setup block components - auto-discover and register block components
+ */
+function setupBlockComponents(
+  options: ModuleOptions,
+  nuxt: any,
+  resolver: ReturnType<typeof createResolver>,
+  logger: ReturnType<typeof useLogger>,
+) {
+  // Path to user's blocks directory
+  const blocksDir = resolve(nuxt.options.rootDir, 'cms/blocks')
+
+  // Check if blocks directory exists
+  if (!require('fs').existsSync(blocksDir)) {
+    logger.debug('No cms/blocks directory found, skipping block component registration')
+    return
+  }
+
+  // Scan for block components
+  const fs = require('fs')
+  const path = require('path')
+  const blockFiles = fs.readdirSync(blocksDir)
+    .filter((f: string) => f.endsWith('.vue'))
+    .map((f: string) => ({
+      name: path.basename(f, '.vue'),
+      path: resolve(blocksDir, f),
+    }))
+
+  if (blockFiles.length === 0) {
+    logger.debug('No block components found in cms/blocks')
+    return
+  }
+
+  // Generate virtual block registry module
+  addTemplate({
+    filename: '#cms/blocks.mjs',
+    write: true,
+    getContents: () => generateBlockRegistry(blockFiles),
+  })
+
+  // Add components directory for blocks
+  addComponentsDir({
+    path: blocksDir,
+    global: true,
+    prefix: '',
+  })
+
+  logger.info(`Block components registered from ${blocksDir}: ${blockFiles.map((b: { name: string }) => b.name).join(', ')}`)
+}
+
+/**
+ * Generate block registry virtual module
+ */
+function generateBlockRegistry(blockFiles: Array<{ name: string, path: string }>): string {
+  const lines: string[] = [
+    '// Auto-generated block registry',
+    '',
+    'export const blockComponents = {',
+  ]
+
+  for (const block of blockFiles) {
+    // Use relative path from the virtual module location
+    lines.push(`  '${block.name}': () => import('${block.path}'),`)
+  }
+
+  lines.push('}')
+  lines.push('')
+  lines.push('export async function loadBlockComponent(name) {')
+  lines.push('  const loader = blockComponents[name]')
+  lines.push('  if (!loader) return null')
+  lines.push('  const module = await loader()')
+  lines.push('  return module.default')
+  lines.push('}')
+
+  return lines.join('\n')
+}
+
+/**
  * Generate TypeScript type definitions
  */
 function generateTypes(resolver: ReturnType<typeof createResolver>): string {
@@ -415,6 +514,11 @@ declare module '#my-module/auth-handler.mjs' {
 
 declare module '#my-module/collections.mjs' {
   export const collections: any[]
+}
+
+declare module '#cms/blocks' {
+  export const blockComponents: Record<string, () => Promise<any>>
+  export function loadBlockComponent(name: string): Promise<any>
 }
 
 declare module 'nuxt/schema' {

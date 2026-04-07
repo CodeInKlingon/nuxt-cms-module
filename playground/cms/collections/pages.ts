@@ -9,7 +9,13 @@ export default defineCollection({
     icon: 'i-lucide-file-text',
     sortable: true,
     searchable: false,
-    description: 'Generic webpages',
+    description: 'Generic webpages with block content',
+  },
+
+  blocks: {
+    enabled: true,
+    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageBlock'],
+    fieldName: 'blocks',
   },
 
   dashboard: {
@@ -22,45 +28,66 @@ export default defineCollection({
     },
 
     form: {
-      sections: [
+      tabs: [
         {
           label: 'Page Details',
-          fields: [
+          icon: 'i-lucide-info',
+          sections: [
             {
-              field: 'title',
-              label: 'Page Title',
-              widget: 'text',
-              required: true,
-              validation: [
-                { type: 'min', value: 3 },
-                { type: 'max', value: 200 },
+              label: 'Basic Info',
+              fields: [
+                {
+                  field: 'title',
+                  label: 'Page Title',
+                  widget: 'text',
+                  required: true,
+                  validation: [
+                    { type: 'min', value: 3 },
+                    { type: 'max', value: 200 },
+                  ],
+                },
+                {
+                  field: 'slug',
+                  label: 'URL Slug',
+                  widget: 'text',
+                  required: true,
+                  description: 'Lowercase letters, numbers, hyphens, and slashes.',
+                  validation: [
+                    { type: 'pattern', value: /^[a-z0-9-/]+$/, message: 'Only lowercase letters, numbers, hyphens, and slashes' },
+                  ],
+                },
+                {
+                  field: 'published',
+                  label: 'Published',
+                  widget: 'boolean',
+                  defaultValue: false,
+                },
               ],
-            },
-            {
-              field: 'slug',
-              label: 'URL Slug',
-              widget: 'text',
-              required: true,
-              description: 'Lowercase letters, numbers, hyphens, and slashes.',
-              validation: [
-                { type: 'pattern', value: /^[a-z0-9-/]+$/, message: 'Only lowercase letters, numbers, hyphens, and slashes' },
-              ],
-            },
-            {
-              field: 'published',
-              label: 'Published',
-              widget: 'boolean',
-              defaultValue: false,
             },
           ],
         },
         {
           label: 'Content',
-          fields: [
+          icon: 'i-lucide-layout',
+          sections: [
             {
-              field: 'content',
-              label: 'Content',
-              widget: 'textarea',
+              label: 'Page Content',
+              fields: [
+                {
+                  field: 'content',
+                  label: 'Legacy Content',
+                  widget: 'textarea',
+                  description: 'This is the old content field. Use Blocks below for new content.',
+                },
+                {
+                  field: 'blocks',
+                  label: 'Block Content',
+                  widget: 'blocks',
+                  props: {
+                    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageBlock'],
+                  },
+                },
+              ],
             },
           ],
         },

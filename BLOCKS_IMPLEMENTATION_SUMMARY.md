@@ -43,7 +43,83 @@
 - Object-type fields support factory functions for defaults
 - Link widget provides URL validation
 
+### ✅ Phase 4: CmsBlockEditor Component
+
+**Files Created:**
+- `src/runtime/components/CmsBlockEditor.vue` - Block editor for CMS admin
+- `src/runtime/widgets/built-ins/blocks.ts` - Blocks field helper
+- `src/runtime/widgets/built-ins/BlocksWidget.vue` - Wrapper around CmsBlockEditor
+
+**Features:**
+- Add/remove/reorder blocks
+- Expand/collapse block editing
+- Widget-based field rendering within blocks
+- Support for allowed blocks restriction
+- Smooth animations for block operations
+- Block metadata tracking (createdAt, updatedAt)
+
+**Block Data Structure:**
+```typescript
+interface BlockItem {
+  id: string           // Unique identifier
+  type: string         // Block component name
+  data: Record<string, any>  // Field values
+  meta?: {
+    createdAt: string
+    updatedAt: string
+  }
+}
+```
+
 ## Usage Examples
+
+### Using Blocks in Collection Forms
+
+```typescript
+// cms/collections/pages.ts
+export default defineCollection({
+  name: 'pages',
+  // ...
+  dashboard: {
+    form: {
+      tabs: [
+        {
+          sections: [
+            {
+              fields: [
+                {
+                  field: 'content',
+                  label: 'Page Content',
+                  widget: 'blocks',
+                  props: {
+                    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageGallery'],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  },
+})
+```
+
+### Nested Blocks (Blocks within Blocks)
+
+```vue
+<script setup lang="ts">
+const props = defineProps({
+  title: textField({ label: 'Title' }),
+  
+  // Nested blocks for column content
+  columns: blocksField({
+    label: 'Column Content',
+    allowedBlocks: ['Text', 'Image'],
+  }),
+})
+</script>
+```
 
 ### Using Field Helpers in Block Components
 
@@ -128,11 +204,6 @@ export default defineNuxtConfig({
 ```
 
 ## Next Steps (Pending)
-
-### Phase 4: CmsBlockEditor Component
-- Create block editor for CMS admin
-- Support add/remove/reorder blocks
-- Runtime prop introspection from Vue components
 
 ### Phase 5: Frontend Rendering
 - `RenderBlocks` component for frontend

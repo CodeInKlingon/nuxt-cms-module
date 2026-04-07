@@ -1,6 +1,6 @@
 <template>
   <div class="random-boolean-widget flex items-center gap-3">
-    <UToggle
+    <USwitch
       :model-value="modelValue"
       @update:model-value="$emit('update:modelValue', $event)"
     />
@@ -13,7 +13,6 @@
     >
       Randomize
     </UButton>
-    {{ modelValue ? 'True' : 'False' }}
   </div>
 </template>
 
