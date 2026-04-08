@@ -4,6 +4,7 @@ import type { LinkOptions, LinkValue } from '../../types/widgets'
 export const linkWidget = defineWidget<LinkValue, LinkOptions>({
   name: 'link',
   component: () => import('./LinkWidget.vue'),
+  propType: Object,
   defaultOptions: {
     default: (): LinkValue => ({ url: '', target: '_self' }),
     allowExternal: true,

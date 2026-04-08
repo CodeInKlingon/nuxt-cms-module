@@ -4,6 +4,7 @@ import type { TextareaOptions } from '../../types/widgets'
 export const textareaWidget = defineWidget<string, TextareaOptions>({
   name: 'textarea',
   component: () => import('./TextareaWidget.vue'),
+  propType: String,
   defaultOptions: {
     default: '',
     rows: 4,

@@ -32,7 +32,7 @@ export function defineWidget<TValue = any, TOptions extends Record<string, any> 
     const validator = buildValidator(mergedOptions.validation as ValidationRule[] | undefined)
 
     return {
-      type: inferPropType<TValue>(),
+      type: definition.propType ?? inferPropType<TValue>(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       required: (options as any)?.required ?? false,
       default: getDefaultValue<TValue>(mergedOptions, definition.defaultOptions),
@@ -45,11 +45,11 @@ export function defineWidget<TValue = any, TOptions extends Record<string, any> 
   }
 }
 
-// Infer Vue PropType from generic
+// Fallback Vue PropType when not specified in widget definition
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function inferPropType<T>(): any {
-  // This will be properly typed by TypeScript
-  // Return Object as default, specific types handled by field helpers
+function inferPropType<_T>(): any {
+  // Default to Object as a safe fallback
+  // Most widgets should specify propType explicitly
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return Object as any
 }
@@ -81,7 +81,6 @@ function getDefaultValue<T>(options: any, defaultOptions?: any): T {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getTypeDefault<T>(_options: any): T {
   // Default to null for objects/arrays, empty string for text, 0 for numbers, false for boolean
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return null as T
 }
 
@@ -125,7 +124,8 @@ function validateRule(value: any, rule: ValidationRule): boolean {
           return true
         }
         return false
-      } catch {
+      }
+      catch {
         return false
       }
     case 'custom':

@@ -4,6 +4,7 @@ import type { TextOptions } from '../../types/widgets'
 export const textWidget = defineWidget<string, TextOptions>({
   name: 'text',
   component: () => import('./TextWidget.vue'),
+  propType: String,
   defaultOptions: {
     default: '',
   },
