@@ -2,15 +2,6 @@ import { defineEventHandler } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { getCollectionDefinition } from '../utils/drizzle-adapter'
 
-// Try to get requireUserSession from Nitro auto-imports or fallback to direct import
-// @ts-ignore - Provided by nuxt-auth-utils module
-const _requireUserSession = typeof requireUserSession !== 'undefined' ? requireUserSession : async (...args: any[]) => {
-  // Fallback: dynamically import if auto-import isn't available
-  // @ts-ignore - Internal path not exported but exists at runtime
-  const utils = await import('nuxt-auth-utils/dist/runtime/server/utils/session.js')
-  return utils.requireUserSession(...args)
-}
-
 /**
  * Auth middleware for CMS API routes.
  * - Skips auth for /auth/** endpoints (login, logout)
@@ -43,5 +34,5 @@ export default defineEventHandler(async (event) => {
   }
 
   // Enforce valid session — throws 401 if missing or invalid
-  await _requireUserSession(event)
+  await requireUserSession(event)
 })

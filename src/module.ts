@@ -13,6 +13,7 @@ import {
   addRouteMiddleware,
   addServerPlugin,
   addImports,
+  addServerImports,
   addTemplate,
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
@@ -118,6 +119,17 @@ export default defineNuxtModule<ModuleOptions>({
   async setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
     const logger = useLogger('nuxt-cms')
+
+    // Register nuxt-auth-utils server functions as Nitro auto-imports for this module's
+    // runtime server files. addServerImportsDir only applies to the consuming app's
+    // server/ directory, not to module runtime files — so we register explicitly here.
+    const authUtilsSession = resolver.resolve('../node_modules/nuxt-auth-utils/dist/runtime/server/utils/session.js')
+    addServerImports([
+      { name: 'setUserSession', from: authUtilsSession },
+      { name: 'clearUserSession', from: authUtilsSession },
+      { name: 'requireUserSession', from: authUtilsSession },
+      { name: 'getUserSession', from: authUtilsSession },
+    ])
 
     // const collections = await loadCollections(options, nuxt, logger)
 
