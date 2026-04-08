@@ -4,8 +4,14 @@ import { useRuntimeConfig } from '#imports'
 import authHandler from '#my-module/auth-handler.mjs'
 import type { CmsLoginCredentials } from '../../../../types'
 
-// setUserSession is provided by nuxt-auth-utils module
-declare function setUserSession(event: any, session: any): Promise<void>
+// Try to get setUserSession from Nitro auto-imports or fallback to direct import
+// @ts-ignore - Provided by nuxt-auth-utils module
+const _setUserSession = typeof setUserSession !== 'undefined' ? setUserSession : async (...args: any[]) => {
+  // Fallback: dynamically import if auto-import isn't available
+  // @ts-ignore - Internal path not exported but exists at runtime
+  const utils = await import('nuxt-auth-utils/dist/runtime/server/utils/session.js')
+  return utils.setUserSession(...args)
+}
 
 export default defineEventHandler(async (event) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +25,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       throw createError({ statusCode: 401, message: 'Invalid credentials' })
     }
-    await setUserSession(event, { user })
+    await _setUserSession(event, { user })
     return { ok: true }
   }
 
@@ -38,6 +44,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Invalid password' })
   }
 
-  await setUserSession(event, { user: { admin: true } })
+  await _setUserSession(event, { user: { admin: true } })
   return { ok: true }
 })
