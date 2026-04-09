@@ -1,3 +1,6 @@
+// Vue prop type constructors
+export type PropTypeConstructor = StringConstructor | NumberConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor
+
 // Widget definition options
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface WidgetDefinitionOptions<TValue, TOptions = Record<string, any>> {
@@ -6,6 +9,7 @@ export interface WidgetDefinitionOptions<TValue, TOptions = Record<string, any>>
   component: () => Promise<any>
   defaultOptions?: Partial<TOptions>
   validate?: (value: TValue, options: TOptions) => string | true
+  propType?: PropTypeConstructor
 }
 
 // Widget registry entry

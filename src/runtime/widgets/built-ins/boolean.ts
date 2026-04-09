@@ -4,6 +4,7 @@ import type { BooleanOptions } from '../../types/widgets'
 export const booleanWidget = defineWidget<boolean, BooleanOptions>({
   name: 'boolean',
   component: () => import('./BooleanWidget.vue'),
+  propType: Boolean,
   defaultOptions: {
     default: false,
   },
