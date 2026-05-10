@@ -2,11 +2,11 @@
 - [x] collection search
 - [x] sortable columns
 - [x] colection filtering
-- [ ] list view custom column rendering (badge coimponent for enums ect)
+- [x] list view custom column rendering (badge coimponent for enums ect)
 - [ ] test and verify collection pagination
 - [ ] test & verify relation field
 - [ ] fix form view ui
-- [ ] defineWidget()
+- [x] defineWidget()
 - [x] custom auth handling
 - [ ] block system
     - block component prop helper functions textField()
