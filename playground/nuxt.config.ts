@@ -30,7 +30,7 @@ export default defineNuxtConfig({
     admin: {
       enabled: true,
       password: process.env.CMS_PASSWORD || 'admin123',
-      title: 'CMS Demo',
+      title: 'Playground',
     },
 
     features: {
