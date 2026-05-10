@@ -88,13 +88,18 @@ const { data: response, pending, refresh } = await useFetch<PaginatedResult>(
 const items = computed(() => response.value?.items || [])
 const total = computed(() => response.value?.total || 0)
 
+// Columns that have a custom cell renderer config
+const cellColumns = computed(() => {
+  return collection.value?.dashboard?.list?.columns?.filter(col => col.cell) ?? []
+})
+
 // Table columns — driven by dashboard.list.columns when defined,
 // otherwise fall back to the first 5 columns of the first record.
 const columns = computed(() => {
   const listColumns = collection.value?.dashboard?.list?.columns
   const fieldCols = []
 
-    if (listColumns?.length) {
+  if (listColumns?.length) {
     for (const col of listColumns) {
       // Determine if this column is sortable
       // Only sortable when explicitly set to true
@@ -273,6 +278,17 @@ definePageMeta({
               New {{ collectionLabel }}
             </UButton>
           </div>
+        </template>
+        <template
+          v-for="col in cellColumns"
+          :key="col.field"
+          #[`${col.field}-cell`]="{ row }"
+        >
+          <CmsCellRenderer
+            :config="typeof col.cell === 'string' ? { type: col.cell } : col.cell"
+            :value="(row.original as Record<string, unknown>)[col.field]"
+            :row="(row.original as Record<string, unknown>)"
+          />
         </template>
         <template #actions-cell="{ row }">
           <div class="flex justify-end gap-1">

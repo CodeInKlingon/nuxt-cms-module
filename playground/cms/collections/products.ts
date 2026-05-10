@@ -17,10 +17,18 @@ export default defineCollection({
   dashboard: {
     list: {
       columns: [
-        { field: 'name', label: 'Product Name', sortable: true },
-        { field: 'slug', label: 'Slug' },
-        { field: 'price', label: 'Price (cents)', sortable: true },
-        { field: 'active', label: 'Active' },
+        { field: 'name', label: 'Product Name', sortable: true, cell: { type: 'text', truncate: 40 } },
+        { field: 'slug', label: 'Slug', cell: { type: 'text', truncate: 30 } },
+        { field: 'price', label: 'Price', sortable: true, cell: { type: 'currency', currency: 'USD' } },
+        {
+          field: 'active',
+          label: 'Status',
+          cell: {
+            type: 'badge',
+            color: { true: 'success', false: 'neutral' },
+            label: { true: 'Active', false: 'Inactive' },
+          },
+        },
       ],
       filters: [
         {

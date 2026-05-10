@@ -53,12 +53,49 @@ export interface ListConfig {
   // Future: searchFields, rowActions, etc.
 }
 
+// ---------------------------------------------------------------------------
+// Cell renderers for list view
+// ---------------------------------------------------------------------------
+
+/** Built-in cell renderer types. */
+// eslint-disable-next-line @stylistic/operator-linebreak
+export type CellType =
+  | 'text'
+  | 'badge'
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'relative'
+  | 'avatar'
+  | 'link'
+  | 'currency'
+  | 'number'
+  | 'image'
+  | 'copy'
+
+/** Configuration for a single cell renderer in the list view. */
+// eslint-disable-next-line @stylistic/operator-linebreak
+export type CellConfig =
+  | { type: 'text', truncate?: number, class?: string }
+  | { type: 'badge', color?: string | Record<string, string>, variant?: string, label?: string | Record<string, string>, size?: string, class?: string }
+  | { type: 'boolean', trueIcon?: string, falseIcon?: string, showLabel?: boolean, class?: string }
+  | { type: 'date', format?: Intl.DateTimeFormatOptions, class?: string }
+  | { type: 'datetime', format?: Intl.DateTimeFormatOptions, class?: string }
+  | { type: 'relative', class?: string }
+  | { type: 'avatar', srcField?: string, nameField?: string, fallback?: string, size?: 'xs' | 'sm' | 'md' | 'lg', showName?: boolean, class?: string }
+  | { type: 'link', href?: string | ((row: Record<string, unknown>) => string), external?: boolean, target?: string, truncate?: number, class?: string }
+  | { type: 'currency', currency?: string, locale?: string, class?: string }
+  | { type: 'number', decimals?: number, locale?: string, prefix?: string, suffix?: string, class?: string }
+  | { type: 'image', width?: number, height?: number, rounded?: boolean, class?: string }
+  | { type: 'copy', truncate?: number, class?: string }
+
 /** A single column definition in the list view. */
 export interface ListColumnConfig {
   field: string
   label?: string
   sortable?: boolean
   width?: number
+  cell?: CellConfig | CellType
 }
 
 // --- Form view ---

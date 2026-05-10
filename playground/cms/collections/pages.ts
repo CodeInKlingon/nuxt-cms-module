@@ -21,9 +21,17 @@ export default defineCollection({
   dashboard: {
     list: {
       columns: [
-        { field: 'title', label: 'Page Title', sortable: true },
-        { field: 'slug', label: 'Slug' },
-        { field: 'published', label: 'Published' },
+        { field: 'title', label: 'Page Title', sortable: true, cell: { type: 'text', truncate: 40 } },
+        { field: 'slug', label: 'Slug', cell: { type: 'link', href: '/{slug}', external: true } },
+        {
+          field: 'published',
+          label: 'Status',
+          cell: {
+            type: 'badge',
+            color: { true: 'success', false: 'neutral' },
+            label: { true: 'Published', false: 'Draft' },
+          },
+        },
       ],
     },
 
