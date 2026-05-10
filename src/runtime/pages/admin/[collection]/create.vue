@@ -21,6 +21,15 @@ const collection = computed(() =>
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
 
+const pageTitle = computed(() => {
+  const baseTitle = config.public.cms.admin?.title || 'CMS Admin'
+  return `${baseTitle} | ${collectionLabel.value} | Create`
+})
+
+useHead(() => ({
+  title: pageTitle.value,
+}))
+
 // Derive layout from dashboard.form
 const hasTabs = computed(() => (collection.value?.dashboard?.form?.tabs?.length ?? 0) > 0)
 

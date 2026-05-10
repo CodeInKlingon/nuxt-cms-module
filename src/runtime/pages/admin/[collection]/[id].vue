@@ -21,6 +21,15 @@ const collection = computed(() =>
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
 
+const pageTitle = computed(() => {
+  const baseTitle = config.public.cms.admin?.title || 'CMS Admin'
+  return `${baseTitle} | ${collectionLabel.value} | Edit`
+})
+
+useHead(() => ({
+  title: pageTitle.value,
+}))
+
 // Fetch existing item
 const { data: item, pending } = await useFetch(
   () => `/api/cms/${collectionName.value}/${itemId.value}`,
