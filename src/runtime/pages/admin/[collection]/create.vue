@@ -122,11 +122,19 @@ definePageMeta({
           <UButton
             color="neutral"
             variant="ghost"
-            icon="i-lucide-arrow-left"
             :to="`${adminRoute}/${collectionName}`"
             size="sm"
           >
-            Back
+            Cancel
+          </UButton>
+          <UButton
+            type="submit"
+            :loading="submitting"
+            size="sm"
+            icon="i-lucide-plus"
+            @click="submit"
+          >
+            Create
           </UButton>
         </template>
       </UDashboardNavbar>
@@ -182,22 +190,6 @@ definePageMeta({
             </div>
           </template>
 
-          <div class="flex items-center gap-3 pt-6 border-t border-default mt-6">
-            <UButton
-              type="submit"
-              :loading="submitting"
-              icon="i-lucide-plus"
-            >
-              Create
-            </UButton>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              :to="`${adminRoute}/${collectionName}`"
-            >
-              Cancel
-            </UButton>
-          </div>
         </form>
       </div>
     </template>
