@@ -44,8 +44,8 @@ const flatSections = computed<FormSection[]>(() =>
   collection.value?.dashboard?.form?.sections ?? [],
 )
 
-// Active tab index
-const activeTab = ref(0)
+// Active tab index - must be string for UTabs v-model
+const activeTab = ref('0')
 
 // Form state — eslint-disable-next-line used because drizzle record values are genuinely unknown
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -132,7 +132,7 @@ definePageMeta({
     </template>
 
     <template #body>
-      <div class="max-w-3xl mx-auto p-4 lg:p-6">
+      <div class="w-full max-w-3xl p-4 lg:p-6">
         <div
           v-if="pending"
           class="flex items-center justify-center py-16"
@@ -153,6 +153,7 @@ definePageMeta({
               v-model="activeTab"
               :items="tabs.map((t, i) => ({ label: t.label, icon: t.icon, slot: `tab-${i}` }))"
               class="mb-6"
+              :unmount-on-hide="false"
             >
               <template
                 v-for="(tab, tabIndex) in tabs"
