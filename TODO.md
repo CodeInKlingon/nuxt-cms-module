@@ -5,7 +5,7 @@
 - [x] list view custom column rendering (badge coimponent for enums ect)
 - [ ] test and verify collection pagination
 - [ ] test & verify relation field
-- [ ] fix form view ui
+- [x] fix form view ui
 - [x] defineWidget()
 - [x] custom auth handling
 - [ ] block system
