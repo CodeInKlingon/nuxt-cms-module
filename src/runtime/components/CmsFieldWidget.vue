@@ -28,11 +28,12 @@ const label = computed(() => {
     .replace(/^./, (s: string) => s.toUpperCase())
 })
 
-// Check if this widget type is supported by the new widget system
-const supportedWidgets = ['text', 'number', 'textarea', 'boolean', 'select', 'link', 'random-boolean', 'blocks']
+// All widgets now go through the new widget system (including auto-discovered custom widgets)
 const useNewWidgetSystem = computed(() => {
+  // Skip special handling widgets that have their own rendering logic
+  const specialWidgets = ['relation', 'richtext', 'date', 'datetime', 'multiselect', 'image', 'file', 'json', 'array']
   const widget = props.field.widget || 'text'
-  return supportedWidgets.includes(widget)
+  return !specialWidgets.includes(widget)
 })
 </script>
 

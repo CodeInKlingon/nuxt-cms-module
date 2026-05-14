@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CollectionDefinition, FormFieldConfig, FormSection, FormTab } from '../../../types'
+import type { BlockItem } from '../../../types/widgets'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,6 +22,15 @@ const collection = computed(() =>
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
 
+const pageTitle = computed(() => {
+  const baseTitle = config.public.cms.admin?.title || 'CMS Admin'
+  return `${baseTitle} | ${collectionLabel.value} | Create`
+})
+
+useHead(() => ({
+  title: pageTitle.value,
+}))
+
 // Derive layout from dashboard.form
 const hasTabs = computed(() => (collection.value?.dashboard?.form?.tabs?.length ?? 0) > 0)
 
@@ -30,8 +40,13 @@ const flatSections = computed<FormSection[]>(() =>
   collection.value?.dashboard?.form?.sections ?? [],
 )
 
-// Active tab index
-const activeTab = ref(0)
+// Check if blocks are enabled for this collection
+const hasBlocks = computed(() => collection.value?.blocks?.enabled === true)
+const blocksFieldName = computed(() => collection.value?.blocks?.fieldName || 'blocks')
+const blocksData = computed(() => formData.value[blocksFieldName.value] as BlockItem[] || [])
+
+// Active tab index - must be string for UTabs v-model
+const activeTab = ref('0')
 
 // Form state — drizzle record values are genuinely unknown at the page level
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,7 +156,75 @@ definePageMeta({
     </template>
 
     <template #body>
-      <div class="max-w-3xl mx-auto p-4 lg:p-6">
+      <!-- Split-pane layout for blocks-enabled collections -->
+      <div
+        v-if="hasBlocks"
+        class="flex flex-col lg:flex-row gap-6 p-4 lg:p-6"
+      >
+        <!-- Left: Form -->
+        <div class="w-full lg:w-1/2">
+          <form @submit.prevent="submit">
+            <!-- Tabbed layout -->
+            <template v-if="hasTabs">
+              <UTabs
+                v-model="activeTab"
+                :items="tabs.map((t, i) => ({ label: t.label, icon: t.icon, slot: `tab-${i}` }))"
+                class="mb-6"
+                :unmount-on-hide="false"
+              >
+                <template
+                  v-for="(tab, tabIndex) in tabs"
+                  :key="tabIndex"
+                  #[`tab-${tabIndex}`]
+                >
+                  <div class="space-y-6 pt-4">
+                    <CmsFormSection
+                      v-for="(section, sectionIndex) in tab.sections"
+                      :key="sectionIndex"
+                      :section="section"
+                      :form-data="formData"
+                      :errors="errors"
+                      @update:form-data="onFieldUpdate"
+                    />
+                  </div>
+                </template>
+              </UTabs>
+            </template>
+
+            <!-- Flat sections layout -->
+            <template v-else>
+              <div class="space-y-6">
+                <CmsFormSection
+                  v-for="(section, sectionIndex) in flatSections"
+                  :key="sectionIndex"
+                  :section="section"
+                  :form-data="formData"
+                  :errors="errors"
+                  @update:form-data="onFieldUpdate"
+                />
+
+                <!-- Fallback: no dashboard config at all -->
+                <UCard v-if="flatSections.length === 0">
+                  <p class="text-sm text-muted text-center py-4">
+                    No form layout configured. Add a <code>dashboard.form</code> to your collection definition.
+                  </p>
+                </UCard>
+              </div>
+            </template>
+          </form>
+        </div>
+
+        <!-- Right: Preview -->
+        <div class="w-full lg:w-1/2 lg:sticky lg:top-4 lg:self-start">
+          <CmsBlocksPreview :blocks="blocksData" />
+        </div>
+      </div>
+
+      <!-- Standard centered layout for non-blocks collections -->
+      <div
+        v-else
+        class="w-full max-w-3xl p-4 lg:p-6"
+      >
         <form @submit.prevent="submit">
           <!-- Tabbed layout -->
           <template v-if="hasTabs">
@@ -149,6 +232,7 @@ definePageMeta({
               v-model="activeTab"
               :items="tabs.map((t, i) => ({ label: t.label, icon: t.icon, slot: `tab-${i}` }))"
               class="mb-6"
+              :unmount-on-hide="false"
             >
               <template
                 v-for="(tab, tabIndex) in tabs"
@@ -189,7 +273,6 @@ definePageMeta({
               </UCard>
             </div>
           </template>
-
         </form>
       </div>
     </template>

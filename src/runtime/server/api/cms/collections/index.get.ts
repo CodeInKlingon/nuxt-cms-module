@@ -67,5 +67,6 @@ export default defineEventHandler(() => {
     name: definition.name,
     dashboard: serializeDashboard(definition.dashboard),
     options: definition.options,
+    blocks: definition.blocks,
   }))
 })

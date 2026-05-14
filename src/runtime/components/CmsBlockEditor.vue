@@ -26,7 +26,16 @@
         v-for="(block, index) in modelValue"
         :key="block.id"
         class="border rounded-lg bg-white overflow-hidden transition-all"
-        :class="{ 'ring-2 ring-primary-500': selectedId === block.id }"
+        :class="{
+          'ring-2 ring-primary-500': selectedId === block.id,
+          'opacity-50': draggingIndex === index,
+          'ring-2 ring-primary-300': dragOverIndex === index && draggingIndex !== index,
+        }"
+        draggable="true"
+        @dragstart="onDragStart($event, index)"
+        @dragover.prevent="onDragOver($event, index)"
+        @drop.prevent="onDrop($event, index)"
+        @dragend="onDragEnd"
       >
         <!-- Block Header -->
         <div
@@ -34,6 +43,11 @@
           @click="toggleBlock(block.id)"
         >
           <div class="flex items-center gap-2">
+            <UIcon
+              name="i-lucide-grip-vertical"
+              class="text-gray-400 cursor-grab active:cursor-grabbing"
+              @click.stop
+            />
             <UIcon
               :name="getBlockIcon(block.type)"
               class="text-gray-400"
@@ -58,6 +72,14 @@
               :disabled="index === modelValue.length - 1"
               @click.stop="moveBlock(index, 1)"
             />
+            <UDropdownMenu :items="getBlockContextMenuItems(index)">
+              <UButton
+                icon="i-lucide-more-vertical"
+                size="xs"
+                variant="ghost"
+                @click.stop
+              />
+            </UDropdownMenu>
             <UButton
               icon="i-lucide-trash"
               size="xs"
@@ -135,6 +157,14 @@
           </template>
         </div>
       </div>
+      <!-- Drop zone at end of list -->
+      <div
+        v-if="modelValue.length > 0"
+        class="h-4 rounded-lg border-2 border-dashed transition-colors"
+        :class="dragOverIndex === modelValue.length ? 'border-primary-500 bg-primary-50' : 'border-transparent'"
+        @dragover.prevent="dragOverIndex = modelValue.length"
+        @drop.prevent="onDrop($event, modelValue.length)"
+      />
     </TransitionGroup>
 
     <!-- Empty State -->
@@ -152,12 +182,16 @@ import { computed, ref, watch } from 'vue'
 import type { BlockItem } from '../types/widgets'
 import { useBlockComponents } from '../composables/useBlockComponents'
 
+const toast = useToast()
+
 interface Props {
-  modelValue: BlockItem[]
+  modelValue?: BlockItem[]
   allowedBlocks?: string[]
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: () => [],
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: BlockItem[]]
@@ -165,14 +199,67 @@ const emit = defineEmits<{
 
 const selectedId = ref<string | null>(null)
 
+// Drag and drop state
+const draggingIndex = ref<number | null>(null)
+const dragOverIndex = ref<number | null>(null)
+
 // Use block components composable
 const {
   loading,
   error,
   currentFields,
   loadBlock,
-  getBlockDefaults,
+
 } = useBlockComponents()
+
+// Drag and drop handlers
+function onDragStart(event: DragEvent, index: number) {
+  draggingIndex.value = index
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    // Set a transparent drag image or custom one if desired
+    event.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function onDragOver(event: DragEvent, index: number) {
+  event.preventDefault()
+  if (draggingIndex.value === null || draggingIndex.value === index) return
+  dragOverIndex.value = index
+}
+
+function onDrop(event: DragEvent, index: number) {
+  event.preventDefault()
+  if (draggingIndex.value === null || draggingIndex.value === index) {
+    clearDragState()
+    return
+  }
+
+  const fromIndex = draggingIndex.value
+  const toIndex = index
+
+  const newValue = [...props.modelValue]
+  const [movedItem] = newValue.splice(fromIndex, 1)
+
+  if (!movedItem) {
+    clearDragState()
+    return
+  }
+
+  newValue.splice(toIndex, 0, movedItem)
+
+  emit('update:modelValue', newValue)
+  clearDragState()
+}
+
+function onDragEnd() {
+  clearDragState()
+}
+
+function clearDragState() {
+  draggingIndex.value = null
+  dragOverIndex.value = null
+}
 
 // Generate UUID
 function generateId(): string {
@@ -186,11 +273,28 @@ const availableBlocks = computed(() => {
 
 // Block menu items for dropdown
 const blockMenuItems = computed(() => {
-  return availableBlocks.value.map((blockName) => ({
+  const items = availableBlocks.value.map(blockName => ({
     label: getBlockLabel(blockName),
     icon: getBlockIcon(blockName),
     onSelect: () => addBlock(blockName),
   }))
+
+  // Add separator and paste option
+  if (items.length > 0) {
+    items.push({
+      label: '',
+      icon: '',
+      onSelect: async () => {},
+    })
+  }
+
+  items.push({
+    label: 'Paste from clipboard',
+    icon: 'i-lucide-clipboard-paste',
+    onSelect: () => pasteBlock(),
+  })
+
+  return items
 })
 
 // Get block label (can be enhanced with block metadata)
@@ -199,7 +303,7 @@ function getBlockLabel(blockType: string): string {
   return blockType
     .replace(/([A-Z])/g, ' $1')
     .replace(/^\s/, '')
-    .replace(/^./, (s) => s.toUpperCase())
+    .replace(/^./, s => s.toUpperCase())
 }
 
 // Get block icon (can be customized per block)
@@ -218,7 +322,7 @@ async function toggleBlock(blockId: string) {
   selectedId.value = blockId
 
   // Find the block
-  const block = props.modelValue.find((b) => b.id === blockId)
+  const block = props.modelValue.find(b => b.id === blockId)
   if (block) {
     // Load the block component to get its fields
     await loadBlock(block.type)
@@ -228,7 +332,7 @@ async function toggleBlock(blockId: string) {
 // Watch for selected block changes to load fields
 watch(selectedId, async (newId) => {
   if (newId) {
-    const block = props.modelValue.find((b) => b.id === newId)
+    const block = props.modelValue.find(b => b.id === newId)
     if (block) {
       await loadBlock(block.type)
     }
@@ -257,7 +361,7 @@ async function addBlock(type: string) {
 
 // Remove a block
 function removeBlock(index: number) {
-  const newValue = props.modelValue.filter((_, i) => i !== index)
+  const newValue = props.modelValue.filter((_block, i) => i !== index)
   emit('update:modelValue', newValue)
 
   // Clear selection if removed block was selected
@@ -282,6 +386,120 @@ function moveBlock(index: number, direction: number) {
   newValue[index] = target
   newValue[targetIndex] = temp
   emit('update:modelValue', newValue)
+}
+
+// Get context menu items for a block
+function getBlockContextMenuItems(index: number) {
+  return [
+    {
+      label: 'Duplicate',
+      icon: 'i-lucide-copy',
+      onSelect: () => duplicateBlock(index),
+    },
+    {
+      label: 'Copy to clipboard',
+      icon: 'i-lucide-clipboard-copy',
+      onSelect: () => copyBlock(index),
+    },
+    {
+      label: 'Paste after',
+      icon: 'i-lucide-clipboard-paste',
+      onSelect: () => pasteBlock(index),
+    },
+  ]
+}
+
+// Duplicate a block
+function duplicateBlock(index: number) {
+  const block = props.modelValue[index]
+  if (!block) return
+
+  const newBlock: BlockItem = {
+    ...block,
+    id: generateId(),
+    data: JSON.parse(JSON.stringify(block.data)),
+    meta: {
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  }
+
+  const newValue = [...props.modelValue]
+  newValue.splice(index + 1, 0, newBlock)
+  emit('update:modelValue', newValue)
+
+  toast.add({
+    title: 'Block duplicated',
+    color: 'success',
+    icon: 'i-lucide-check',
+  })
+}
+
+// Copy block to clipboard
+async function copyBlock(index: number) {
+  const block = props.modelValue[index]
+  if (!block) return
+
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(block))
+    toast.add({
+      title: 'Block copied to clipboard',
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
+  }
+  catch {
+    toast.add({
+      title: 'Failed to copy block',
+      color: 'error',
+      icon: 'i-lucide-x',
+    })
+  }
+}
+
+// Paste block from clipboard
+async function pasteBlock(afterIndex?: number) {
+  try {
+    const text = await navigator.clipboard.readText()
+    const parsed = JSON.parse(text)
+
+    // Validate block data
+    if (!parsed || typeof parsed !== 'object' || !parsed.type || !parsed.data) {
+      throw new Error('Invalid block data')
+    }
+
+    // Check if block type is allowed
+    if (props.allowedBlocks && !props.allowedBlocks.includes(parsed.type)) {
+      throw new Error(`Block type "${parsed.type}" is not allowed`)
+    }
+
+    const newBlock: BlockItem = {
+      ...parsed,
+      id: generateId(),
+      meta: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    }
+
+    const newValue = [...props.modelValue]
+    const insertIndex = afterIndex !== undefined ? afterIndex + 1 : newValue.length
+    newValue.splice(insertIndex, 0, newBlock)
+    emit('update:modelValue', newValue)
+
+    toast.add({
+      title: 'Block pasted',
+      color: 'success',
+      icon: 'i-lucide-check',
+    })
+  }
+  catch {
+    toast.add({
+      title: 'Clipboard does not contain a valid block',
+      color: 'error',
+      icon: 'i-lucide-x',
+    })
+  }
 }
 
 // Update a block field

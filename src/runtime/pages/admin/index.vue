@@ -6,6 +6,10 @@ const adminRoute = computed(() => config.public.cms.admin?.route || '/admin')
 const title = computed(() => config.public.cms.admin?.title || 'CMS Admin')
 const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
 
+useHead(() => ({
+  title: title.value,
+}))
+
 const { data: collections } = await useFetch<CollectionDefinition[]>(() => `${apiPrefix.value}/collections`, {
   default: (): CollectionDefinition[] => [],
 })

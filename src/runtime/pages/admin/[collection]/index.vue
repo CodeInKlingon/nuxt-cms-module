@@ -23,6 +23,15 @@ const collection = computed(() =>
 
 const collectionLabel = computed(() => collection.value?.options?.label || collectionName.value)
 
+const pageTitle = computed(() => {
+  const baseTitle = config.public.cms.admin?.title || 'CMS Admin'
+  return `${baseTitle} | ${collectionLabel.value}`
+})
+
+useHead(() => ({
+  title: pageTitle.value,
+}))
+
 const searchPlaceholder = computed(() => {
   const searchCols = collection.value?.options?.searchColumns
   if (searchCols && searchCols.length > 0) {
