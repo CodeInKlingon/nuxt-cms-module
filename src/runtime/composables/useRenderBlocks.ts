@@ -30,28 +30,38 @@ function resolveBlockComponent(blockType: string) {
     // Component not registered globally
   }
 
-  // Fallback: try dynamic import
-  const asyncComponent = defineAsyncComponent(() => 
-    import(`../../../../playground/cms/blocks/${blockType}.vue`).catch(() => {
-      console.error(`Block component not found: ${blockType}`)
-      return {
-        template: `<div class="p-4 bg-red-50 text-red-600 rounded border border-red-200">Block "${blockType}" not found</div>`,
+  // Fallback: try virtual module
+  const asyncComponent = defineAsyncComponent(async () => {
+    try {
+      // @ts-expect-error - Virtual module
+      const blocksModule = await import('#cms/blocks')
+      const component = await blocksModule.loadBlockComponent(blockType)
+      if (component) {
+        return component
       }
-    })
-  )
-  
+    }
+    catch {
+      console.error(`Block component not found: ${blockType}`)
+    }
+
+    // Return a fallback error component
+    return {
+      template: `<div class="p-4 bg-red-50 text-red-600 rounded border border-red-200">Block "${blockType}" not found</div>`,
+    }
+  })
+
   componentCache.set(blockType, asyncComponent)
   return asyncComponent
 }
 
 /**
  * Composable for programmatically rendering blocks
- * 
+ *
  * @example
  * ```vue
  * <script setup>
  * const { renderBlocks } = useRenderBlocks()
- * 
+ *
  * const blocksVNode = computed(() => {
  *   return renderBlocks(page.value.blocks, {
  *     wrapperClass: 'my-blocks',
@@ -59,7 +69,7 @@ function resolveBlockComponent(blockType: string) {
  *   })
  * })
  * </script>
- * 
+ *
  * <template>
  *   <component :is="blocksVNode" />
  * </template>

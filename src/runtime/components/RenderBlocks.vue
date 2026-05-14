@@ -42,17 +42,26 @@ function resolveBlockComponent(blockType: string) {
     // Component not registered globally
   }
 
-  // Fallback: try dynamic import
-  const asyncComponent = defineAsyncComponent(() => 
-    import(`../../../../playground/cms/blocks/${blockType}.vue`).catch(() => {
-      console.error(`Block component not found: ${blockType}`)
-      // Return a fallback component
-      return {
-        template: `<div class="p-4 bg-red-50 text-red-600 rounded border border-red-200">Block "${blockType}" not found</div>`,
+  // Fallback: try virtual module
+  const asyncComponent = defineAsyncComponent(async () => {
+    try {
+      // @ts-expect-error - Virtual module
+      const blocksModule = await import('#cms/blocks')
+      const component = await blocksModule.loadBlockComponent(blockType)
+      if (component) {
+        return component
       }
-    })
-  )
-  
+    }
+    catch {
+      console.error(`Block component not found: ${blockType}`)
+    }
+
+    // Return a fallback error component
+    return {
+      template: `<div class="p-4 bg-red-50 text-red-600 rounded border border-red-200">Block "${blockType}" not found</div>`,
+    }
+  })
+
   componentCache.set(blockType, asyncComponent)
   return asyncComponent
 }

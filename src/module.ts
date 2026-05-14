@@ -345,18 +345,27 @@ export const collections = [${colArray}]`,
 
     // 11. Add Vite alias for virtual modules
     const blocksPath = nuxt.options.buildDir + '/#cms/blocks.mjs'
+    const widgetsPath = nuxt.options.buildDir + '/#cms/widgets.mjs'
     nuxt.options.vite = nuxt.options.vite || {}
     nuxt.options.vite.resolve = nuxt.options.vite.resolve || {}
     nuxt.options.vite.resolve.alias = nuxt.options.vite.resolve.alias || {}
-    
+
     if (Array.isArray(nuxt.options.vite.resolve.alias)) {
-      nuxt.options.vite.resolve.alias.push({
-        find: /^#cms\/blocks$/,
-        replacement: blocksPath,
-      })
+      nuxt.options.vite.resolve.alias.push(
+        {
+          find: /^#cms\/blocks$/,
+          replacement: blocksPath,
+        },
+        {
+          find: /^#cms\/widgets$/,
+          replacement: widgetsPath,
+        },
+      )
     }
     else {
-      (nuxt.options.vite.resolve.alias as Record<string, string>)['#cms/blocks'] = blocksPath
+      const alias = nuxt.options.vite.resolve.alias as Record<string, string>
+      alias['#cms/blocks'] = blocksPath
+      alias['#cms/widgets'] = widgetsPath
     }
   },
 })
@@ -373,6 +382,7 @@ function setupWidgets(
   // Auto-import widget composables
   addImports([
     { name: 'defineWidget', from: resolver.resolve('./runtime/composables/defineWidget') },
+    { name: 'getWidget', from: resolver.resolve('./runtime/composables/getWidget') },
     { name: 'textField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'numberField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'textareaField', from: resolver.resolve('./runtime/widgets/built-ins') },
@@ -384,16 +394,46 @@ function setupWidgets(
     { name: 'useRenderBlocks', from: resolver.resolve('./runtime/composables/useRenderBlocks') },
   ])
 
-  // Collect user-defined widgets
+  // Path to user's widgets directory
+  const widgetsDir = resolve(nuxt.options.rootDir, 'cms/widgets')
+
+  // Scan for custom widget components
+  const widgetFiles: Array<{ name: string, path: string }> = []
+  if (require('fs').existsSync(widgetsDir)) {
+    const fs = require('fs')
+    const path = require('path')
+    const files = fs.readdirSync(widgetsDir)
+      .filter((f: string) => f.endsWith('.vue'))
+      .map((f: string) => ({
+        name: path.basename(f, '.vue'),
+        path: resolve(widgetsDir, f),
+      }))
+    widgetFiles.push(...files)
+  }
+
+  // Also support widgets passed via options
   const userWidgets = options.widgets || []
 
   // Generate virtual widget registry
-  addServerTemplate({
+  addTemplate({
     filename: '#cms/widgets.mjs',
-    getContents: () => generateWidgetRegistry(resolver, userWidgets),
+    write: true,
+    getContents: () => generateWidgetRegistry(resolver, widgetFiles, userWidgets),
   })
 
-  logger.info(`Widget system initialized with ${userWidgets.length} custom widget(s)`)
+  // Add components directory for widgets (for global resolution)
+  if (widgetFiles.length > 0) {
+    addComponentsDir({
+      path: widgetsDir,
+      global: true,
+      prefix: '',
+    })
+    logger.info(`Widget components registered from ${widgetsDir}: ${widgetFiles.map((w: { name: string }) => w.name).join(', ')}`)
+  }
+
+  if (userWidgets.length > 0) {
+    logger.info(`Widget system initialized with ${userWidgets.length} custom widget(s) from options`)
+  }
 }
 
 /**
@@ -401,26 +441,39 @@ function setupWidgets(
  */
 function generateWidgetRegistry(
   resolver: ReturnType<typeof createResolver>,
+  widgetFiles: Array<{ name: string, path: string }>,
   userWidgets: Array<() => any>,
 ): string {
   const lines: string[] = [
     '// Auto-generated widget registry',
     '',
     'export const widgetRegistry = {',
-    "  text: () => import('${resolver.resolve('./runtime/widgets/built-ins/TextWidget.vue')}'),",
-    "  number: () => import('${resolver.resolve('./runtime/widgets/built-ins/NumberWidget.vue')}'),",
-    "  textarea: () => import('${resolver.resolve('./runtime/widgets/built-ins/TextareaWidget.vue')}'),",
-    "  boolean: () => import('${resolver.resolve('./runtime/widgets/built-ins/BooleanWidget.vue')}'),",
-    "  select: () => import('${resolver.resolve('./runtime/widgets/built-ins/SelectWidget.vue')}'),",
+    `  text: () => import('${resolver.resolve('./runtime/widgets/built-ins/TextWidget.vue')}'),`,
+    `  number: () => import('${resolver.resolve('./runtime/widgets/built-ins/NumberWidget.vue')}'),`,
+    `  textarea: () => import('${resolver.resolve('./runtime/widgets/built-ins/TextareaWidget.vue')}'),`,
+    `  boolean: () => import('${resolver.resolve('./runtime/widgets/built-ins/BooleanWidget.vue')}'),`,
+    `  select: () => import('${resolver.resolve('./runtime/widgets/built-ins/SelectWidget.vue')}'),`,
+    `  link: () => import('${resolver.resolve('./runtime/widgets/built-ins/LinkWidget.vue')}'),`,
+    `  blocks: () => import('${resolver.resolve('./runtime/widgets/built-ins/BlocksWidget.vue')}'),`,
   ]
 
-  // Add user-defined widgets if any
-  // Note: This is a simplified version - in reality, we'd need to extract
-  // widget info from the field functions
-  if (userWidgets.length > 0) {
-    lines.push('  // User-defined widgets')
-    // User widgets would be added here based on their configuration
+  // Add user-defined widgets from cms/widgets directory
+  if (widgetFiles.length > 0) {
+    lines.push('  // User-defined widgets from cms/widgets')
+    for (const widget of widgetFiles) {
+      // Convert component name to kebab-case for widget name
+      // PascalCase -> kebab-case (e.g., RandomBooleanWidget -> random-boolean-widget)
+      const widgetName = widget.name
+        .replace(/([a-z])([A-Z])/g, '$1-$2')
+        .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
+        .toLowerCase()
+      lines.push(`  '${widgetName}': () => import('${widget.path}'),`)
+    }
   }
+
+  // Note: widgets passed via options.widgets are field functions created by defineWidget()
+  // Their components should be placed in cms/widgets/ to be auto-registered above
+  // or registered separately via addComponentsDir in the user's nuxt.config.ts
 
   lines.push('}')
   lines.push('')

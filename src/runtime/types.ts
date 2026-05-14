@@ -124,9 +124,9 @@ export interface FormSection {
   fields: FormFieldConfig[]
 }
 
-/** Widget types the admin UI knows how to render. */
+/** Built-in widget types the admin UI knows how to render. */
 // eslint-disable-next-line @stylistic/operator-linebreak
-export type WidgetType =
+export type BuiltinWidgetType =
   | 'text'
   | 'textarea'
   | 'number'
@@ -141,8 +141,10 @@ export type WidgetType =
   | 'json'
   | 'array'
   | 'custom'
-  | 'random-boolean'
   | 'blocks'
+
+/** Widget type - can be built-in or custom (auto-discovered from cms/widgets/) */
+export type WidgetType = BuiltinWidgetType | (string & {})
 
 /** A single field entry inside a form section. */
 export interface FormFieldConfig {

@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent, h } from 'vue'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface Props {
@@ -66,11 +66,19 @@ const emit = defineEmits<{
   'update:modelValue': [value: any]
 }>()
 
+// Error component using render function (no template compilation needed)
+const ErrorComponent = {
+  setup() {
+    return () => h('div', { 
+      class: 'p-4 bg-red-50 text-red-600 rounded border border-red-200' 
+    }, 'Error loading widget')
+  }
+}
+
 // Widget component resolution
 const widgetComponent = computed(() => {
-  // Map widget names to their components
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const widgetMap: Record<string, any> = {
+  // Built-in widgets map
+  const widgetMap: Record<string, ReturnType<typeof defineAsyncComponent>> = {
     text: defineAsyncComponent(() => import('../widgets/built-ins/TextWidget.vue')),
     number: defineAsyncComponent(() => import('../widgets/built-ins/NumberWidget.vue')),
     textarea: defineAsyncComponent(() => import('../widgets/built-ins/TextareaWidget.vue')),
@@ -80,15 +88,38 @@ const widgetComponent = computed(() => {
     blocks: defineAsyncComponent(() => import('../widgets/built-ins/BlocksWidget.vue')),
   }
 
-  // Support for custom widgets from user land
-  // Custom widgets can be registered by adding them to the widgetMap
-  // or by using the widget registry system
-  if (props.widget === 'random-boolean') {
-    // @ts-expect-error - Dynamic import for playground custom widget
-    return defineAsyncComponent(() => import('../../../../playground/cms/widgets/RandomBooleanWidget.vue'))
+  // Check built-in widgets first
+  if (widgetMap[props.widget]) {
+    return widgetMap[props.widget]
   }
 
-  return widgetMap[props.widget] || null
+  // For custom widgets, try to load from the virtual widget registry
+  return defineAsyncComponent({
+    loader: async () => {
+      try {
+        // @ts-expect-error - Virtual module
+        const widgetsModule = await import('#cms/widgets')
+        const loader = widgetsModule.getWidget(props.widget)
+        if (loader) {
+          const module = await loader()
+          return module.default || module
+        }
+      }
+      catch {
+        // Virtual module not available or widget not found
+      }
+
+      // Return error component if widget not found (using render function)
+      return {
+        setup() {
+          return () => h('div', { 
+            class: 'p-4 bg-red-50 text-red-600 rounded border border-red-200' 
+          }, `Widget "${props.widget}" not found`)
+        }
+      }
+    },
+    errorComponent: ErrorComponent,
+  })
 })
 
 // Props to pass to widget component (exclude cms-specific props)
@@ -104,4 +135,3 @@ function handleUpdate(value: any) {
   emit('update:modelValue', value)
 }
 </script>
-

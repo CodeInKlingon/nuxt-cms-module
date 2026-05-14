@@ -3,7 +3,7 @@ import type { BooleanOptions } from '../../../src/runtime/types/widgets'
 
 export const randomBooleanWidget = defineWidget<boolean, BooleanOptions>({
   name: 'random-boolean',
-  component: () => import('./RandomBooleanWidget.vue'),
+  component: () => import('./RandomBoolean.vue'),
   defaultOptions: {
     default: false,
   },

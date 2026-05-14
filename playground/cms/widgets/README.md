@@ -4,7 +4,7 @@ This is a demonstration of creating custom widgets for the nuxt-cms module.
 
 ## What It Does
 
-The `random-boolean` widget provides:
+The `random-boolean-widget` provides:
 - A toggle switch for boolean values (same as the built-in `boolean` widget)
 - A "Random" button that randomly sets the value to true or false
 - Useful for testing or demo purposes
@@ -114,7 +114,7 @@ export default defineCollection({
                 {
                   field: 'active',
                   label: 'Active',
-                  widget: 'random-boolean',  // Use custom widget
+                  widget: 'random-boolean-widget',  // Use kebab-case version of component filename
                   defaultValue: true,
                 },
               ],
@@ -141,11 +141,13 @@ const props = defineProps({
 
 ## How It Works
 
-1. The widget is defined using `defineWidget()` which returns a field function
-2. The field function creates a Vue prop definition with CMS metadata
-3. The widget component receives `modelValue` prop and emits `update:modelValue`
-4. The CMS form uses `CmsWidgetRenderer` to dynamically load and render the widget
-5. Custom widgets need to be added to the `supportedWidgets` list in `CmsFieldWidget.vue`
+1. The widget Vue component is placed in `cms/widgets/` directory (e.g., `RandomBooleanWidget.vue`)
+2. The module auto-discovers and registers widgets from this directory
+3. Widgets are registered using kebab-case version of the filename (e.g., `RandomBooleanWidget.vue` → `random-boolean-widget`)
+4. The widget component receives `modelValue` prop and emits `update:modelValue`
+5. The CMS form uses `CmsWidgetRenderer` to dynamically load and render the widget via the virtual widget registry
+
+**Note:** Widgets passed via `cms.widgets` in `nuxt.config.ts` still work, but their Vue components should also be placed in `cms/widgets/` for auto-registration.
 
 ## Testing
 

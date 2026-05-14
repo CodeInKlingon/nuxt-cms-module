@@ -14,7 +14,7 @@ export default defineCollection({
 
   blocks: {
     enabled: true,
-    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageBlock'],
+    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageBlock', 'FeatureCard'],
     fieldName: 'blocks',
   },
 
@@ -92,7 +92,7 @@ export default defineCollection({
                   label: 'Block Content',
                   widget: 'blocks',
                   props: {
-                    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageBlock'],
+                    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageBlock', 'FeatureCard'],
                   },
                 },
               ],
