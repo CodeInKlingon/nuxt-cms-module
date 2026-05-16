@@ -329,9 +329,9 @@ definePageMeta({
         </p>
         <UPagination
           v-if="total > pageSize"
-          v-model="page"
+          v-model:page="page"
           :total="total"
-          :page-count="pageSize"
+          :items-per-page="pageSize"
           size="sm"
         />
       </div>
