@@ -70,6 +70,16 @@ export default defineCollection({
                   widget: 'boolean',
                   defaultValue: false,
                 },
+                {
+                  field: 'products',
+                  label: 'Related Products',
+                  widget: 'relation',
+                  relation: {
+                    type: 'many',
+                    collection: 'products',
+                    displayField: 'name',
+                  },
+                },
               ],
             },
           ],

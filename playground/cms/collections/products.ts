@@ -86,6 +86,16 @@ export default defineCollection({
                   widget: 'random-boolean',
                   defaultValue: true,
                 },
+                {
+                  field: 'pages',
+                  label: 'Related Pages',
+                  widget: 'relation',
+                  relation: {
+                    type: 'many',
+                    collection: 'pages',
+                    displayField: 'title',
+                  },
+                },
               ],
             },
           ],
