@@ -8,6 +8,13 @@
       "when": 1778961300948,
       "tag": "0000_faulty_harpoon",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781361567442,
+      "tag": "0001_nifty_trauma",
+      "breakpoints": true
     }
   ]
 }

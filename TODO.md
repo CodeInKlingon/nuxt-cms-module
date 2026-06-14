@@ -1,16 +1,20 @@
 
+- [ ] login ui shows password error (red outline on input) on initial load
 - [x] collection search
 - [x] sortable columns
 - [x] colection filtering
 - [x] list view custom column rendering (badge coimponent for enums ect)
-- [ ] test and verify collection pagination
+- [X] test and verify collection pagination
 - [ ] test & verify relation field
+  - [ ] relation selection definition
 - [x] fix form view ui
 - [x] defineWidget()
 - [x] custom auth handling
-- [ ] block system
-    - block component prop helper functions textField()
-    - block editor
-        - re-arrange (dnd)
-        - prop form
-        - block preview
+- [x] block system
+    - [x] block component prop helper functions textField()
+    - [x] block editor
+        - [x] re-arrange (dnd)
+        - [x] prop form
+        - [x] block preview
+          - [ ] improve ui
+- [ ] single item collection cms definition

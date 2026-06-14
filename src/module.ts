@@ -143,7 +143,7 @@ export default defineNuxtModule<ModuleOptions>({
         const absPath = resolve(nuxt.options.rootDir, relPath)
         return `import _col${i} from '${toPath(absPath)}'`
       })
-      .join('\n')
+        .join('\n')
 
       const colArray = Object.entries(options.collections).map((_, i) => `_col${i}`).join(', ')
 
@@ -157,7 +157,7 @@ export const collections = [${colArray}]`,
     if (options.database) {
       addServerTemplate({
         filename: '#my-module/db.mjs',
-        getContents: () => `export { default } from '${resolve(nuxt.options.rootDir, options.database!)}'`,
+        getContents: () => `export { default, schema } from '${resolve(nuxt.options.rootDir, options.database!)}'`,
       })
     }
     else {
@@ -217,6 +217,13 @@ export const collections = [${colArray}]`,
       route: joinURL(options.api?.prefix || '/api/cms', '/collections'),
       method: 'get',
       handler: resolver.resolve('./runtime/server/api/cms/collections/index.get'),
+    })
+
+    // Relation read endpoint — must be before the catch-all
+    addServerHandler({
+      route: joinURL(options.api?.prefix || '/api/cms', '/:collection/:id/relations/:field'),
+      method: 'get',
+      handler: resolver.resolve('./runtime/server/api/cms/relations/index.get'),
     })
 
     addServerHandler({
@@ -308,7 +315,7 @@ export const collections = [${colArray}]`,
     }
 
     // 8. Store options in runtime config
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     nuxt.options.runtimeConfig.cms = {
       admin: {
         password: options.admin?.password,
@@ -318,7 +325,6 @@ export const collections = [${colArray}]`,
       },
     } as any
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     nuxt.options.runtimeConfig.public.cms = {
       admin: {
         route: options.admin?.route || '/admin',
@@ -390,8 +396,10 @@ function setupWidgets(
     { name: 'selectField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'linkField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'blocksField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'relationField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'useBlockComponents', from: resolver.resolve('./runtime/composables/useBlockComponents') },
     { name: 'useRenderBlocks', from: resolver.resolve('./runtime/composables/useRenderBlocks') },
+    { name: 'useCollectionList', from: resolver.resolve('./runtime/composables/useCollectionList') },
   ])
 
   // Path to user's widgets directory
@@ -399,9 +407,9 @@ function setupWidgets(
 
   // Scan for custom widget components
   const widgetFiles: Array<{ name: string, path: string }> = []
-  if (require('fs').existsSync(widgetsDir)) {
-    const fs = require('fs')
-    const path = require('path')
+  if (require('node:fs').existsSync(widgetsDir)) {
+    const fs = require('node:fs')
+    const path = require('node:path')
     const files = fs.readdirSync(widgetsDir)
       .filter((f: string) => f.endsWith('.vue'))
       .map((f: string) => ({
@@ -455,6 +463,7 @@ function generateWidgetRegistry(
     `  select: () => import('${resolver.resolve('./runtime/widgets/built-ins/SelectWidget.vue')}'),`,
     `  link: () => import('${resolver.resolve('./runtime/widgets/built-ins/LinkWidget.vue')}'),`,
     `  blocks: () => import('${resolver.resolve('./runtime/widgets/built-ins/BlocksWidget.vue')}'),`,
+    `  relation: () => import('${resolver.resolve('./runtime/widgets/built-ins/RelationWidget.vue')}'),`,
   ]
 
   // Add user-defined widgets from cms/widgets directory
@@ -496,42 +505,42 @@ function setupBlockComponents(
   // Path to user's blocks directory
   const blocksDir = resolve(nuxt.options.rootDir, 'cms/blocks')
 
-  // Check if blocks directory exists
-  if (!require('fs').existsSync(blocksDir)) {
-    logger.debug('No cms/blocks directory found, skipping block component registration')
-    return
-  }
-
   // Scan for block components
-  const fs = require('fs')
-  const path = require('path')
-  const blockFiles = fs.readdirSync(blocksDir)
-    .filter((f: string) => f.endsWith('.vue'))
-    .map((f: string) => ({
-      name: path.basename(f, '.vue'),
-      path: resolve(blocksDir, f),
-    }))
+  const fs = require('node:fs')
+  const path = require('node:path')
+  const blockFiles = fs.existsSync(blocksDir)
+    ? fs.readdirSync(blocksDir)
+      .filter((f: string) => f.endsWith('.vue'))
+      .map((f: string) => ({
+        name: path.basename(f, '.vue'),
+        path: resolve(blocksDir, f),
+      }))
+    : []
 
   if (blockFiles.length === 0) {
     logger.debug('No block components found in cms/blocks')
-    return
   }
 
-  // Generate virtual block registry module
+  // Always generate the virtual block registry module so #cms/blocks resolves,
+  // even when no user-defined blocks exist.
   addTemplate({
     filename: '#cms/blocks.mjs',
     write: true,
     getContents: () => generateBlockRegistry(blockFiles),
   })
 
-  // Add components directory for blocks
-  addComponentsDir({
-    path: blocksDir,
-    global: true,
-    prefix: '',
-  })
+  // Add components directory for blocks only when the directory exists
+  if (fs.existsSync(blocksDir)) {
+    addComponentsDir({
+      path: blocksDir,
+      global: true,
+      prefix: '',
+    })
+  }
 
-  logger.info(`Block components registered from ${blocksDir}: ${blockFiles.map((b: { name: string }) => b.name).join(', ')}`)
+  if (blockFiles.length > 0) {
+    logger.info(`Block components registered from ${blocksDir}: ${blockFiles.map((b: { name: string }) => b.name).join(', ')}`)
+  }
 }
 
 /**
@@ -568,7 +577,7 @@ function generateTypes(resolver: ReturnType<typeof createResolver>): string {
   return `
 declare module '#cms' {
   import type { CollectionDefinition, CmsAuthVerifyFn, CmsLoginCredentials } from '${resolver.resolve('./runtime/types')}'
-  import type { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField } from '${resolver.resolve('./runtime/widgets/built-ins')}'
+  import type { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField, relationField } from '${resolver.resolve('./runtime/widgets/built-ins')}'
   import type { useRenderBlocks } from '${resolver.resolve('./runtime/composables/useRenderBlocks')}'
 
   export const collections: CollectionDefinition[]
@@ -576,7 +585,7 @@ declare module '#cms' {
   export function getAllCollections(): CollectionDefinition[]
 
   export { defineCollection } from '${resolver.resolve('./runtime/composables/defineCollection')}'
-  export { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField }
+  export { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField, relationField }
   export { useRenderBlocks }
   export type { CmsAuthVerifyFn, CmsLoginCredentials }
 }

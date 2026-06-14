@@ -3,6 +3,7 @@ import type { CollectionDefinition } from '../../types'
 let dbInstance: any = null
 const collectionSchemas = new Map<string, any>()
 const collectionDefinitions = new Map<string, CollectionDefinition>()
+const schemaTables = new Map<string, any>()
 
 export function setDrizzleConnection(db: any) {
   dbInstance = db
@@ -46,4 +47,20 @@ export function registerCollections(collections: CollectionDefinition[]) {
 
 export function getAllCollectionDefinitions(): CollectionDefinition[] {
   return Array.from(collectionDefinitions.values())
+}
+
+export function registerSchemaTables(tables: Record<string, any>) {
+  for (const [name, table] of Object.entries(tables)) {
+    if (table) {
+      schemaTables.set(name, table)
+    }
+  }
+}
+
+export function getSchemaTable(name: string): any {
+  return schemaTables.get(name)
+}
+
+export function getAllSchemaTables(): Record<string, any> {
+  return Object.fromEntries(schemaTables)
 }

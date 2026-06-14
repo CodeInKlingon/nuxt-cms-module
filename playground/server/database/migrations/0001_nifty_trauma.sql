@@ -1,0 +1,1 @@
+ALTER TABLE `products_to_pages` ADD `order` integer DEFAULT 0 NOT NULL;

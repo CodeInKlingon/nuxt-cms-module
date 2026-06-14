@@ -75,12 +75,12 @@ export default defineNitroPlugin(() => {
     const junctionCount = (sqlite.prepare('SELECT COUNT(*) as c FROM products_to_pages').get() as { c: number }).c
     if (junctionCount === 0) {
       const insert = sqlite.prepare(`
-        INSERT INTO products_to_pages (product_id, page_id)
-        VALUES (?, ?)
+        INSERT INTO products_to_pages (product_id, page_id, "order")
+        VALUES (?, ?, ?)
       `)
-      insert.run(product1Id, page1Id) // Example Widget -> Welcome
-      insert.run(product1Id, page2Id) // Example Widget -> About
-      insert.run(product2Id, page1Id) // Demo Gadget -> Welcome
+      insert.run(product1Id, page1Id, 0) // Example Widget -> Welcome
+      insert.run(product1Id, page2Id, 1) // Example Widget -> About
+      insert.run(product2Id, page1Id, 0) // Demo Gadget -> Welcome
       console.log('[cms] Seeded products_to_pages with 3 sample rows')
     }
   }

@@ -12,7 +12,7 @@ const { createInsertSchema } = createSchemaFactory({
  * Walks tabs → sections → fields (or sections → fields for flat layouts).
  * Returns an empty array when no dashboard is defined.
  */
-function flattenDashboardFields(collection: CollectionDefinition): FormFieldConfig[] {
+export function flattenFormFields(collection: CollectionDefinition): FormFieldConfig[] {
   const dashboard = collection.dashboard
   if (!dashboard?.form) return []
 
@@ -42,13 +42,18 @@ function flattenDashboardFields(collection: CollectionDefinition): FormFieldConf
  * rules from `dashboard.form` as Zod refinements.
  */
 function buildZodSchema(collection: CollectionDefinition) {
-  const fields = flattenDashboardFields(collection)
+  const fields = flattenFormFields(collection)
 
   // Build a refinement map from dashboard field configs
   const refinements: Record<string, (schema: z.ZodType) => z.ZodType> = {}
 
   for (const fieldConfig of fields) {
     if (!fieldConfig.validation?.length) continue
+
+    // Relation fields are validated/handled outside the Drizzle schema, so
+    // skip applying their refinements here (the actual column for inline
+    // relations is validated by the schema itself).
+    if (fieldConfig.relation) continue
 
     refinements[fieldConfig.field] = (columnSchema: z.ZodType) => {
       return applyFieldRules(columnSchema, fieldConfig)
@@ -251,7 +256,7 @@ export async function validateData(
   data: Record<string, unknown>,
 ): Promise<ValidationError[]> {
   const errors: ValidationError[] = []
-  const fields = flattenDashboardFields(collection)
+  const fields = flattenFormFields(collection)
 
   for (const fieldConfig of fields) {
     const value = data[fieldConfig.field]

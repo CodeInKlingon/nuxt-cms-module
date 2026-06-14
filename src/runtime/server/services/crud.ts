@@ -4,6 +4,7 @@ import type { CollectionDefinition, CrudContext, PaginatedResult, QueryOptions }
 import { getDrizzleConnection, getCollectionSchema } from '../utils/drizzle-adapter'
 import { executeHooks } from './hooks'
 import { validateAndCoerce } from './validation'
+import { deleteRelations, extractRelations, writeRelations } from './relations'
 
 /**
  * CRUD service for managing collection data
@@ -100,114 +101,135 @@ export class CrudService {
    * Create a new record
    */
   async create(data: any): Promise<any> {
-    const context: CrudContext = { ...this.context, operation: 'create' }
+    return await this.db.transaction(async (tx) => {
+      const context: CrudContext = { ...this.context, operation: 'create' }
 
-    // Execute beforeCreate hook
-    if (this.collection.hooks?.beforeCreate) {
-      data = await executeHooks(
-        this.collection.hooks.beforeCreate,
-        data,
-        context,
-      )
-    }
+      // Execute beforeCreate hook
+      if (this.collection.hooks?.beforeCreate) {
+        data = await executeHooks(
+          this.collection.hooks.beforeCreate,
+          data,
+          context,
+        )
+      }
 
-    // Validate and coerce data
-    const result = await validateAndCoerce(this.collection, data)
-    if (!result.success) {
-      throw new Error(`Validation failed: ${JSON.stringify(result.errors)}`)
-    }
+      // Separate relation values from the main-record payload
+      const { mainData, relationValues } = extractRelations(this.collection, data)
 
-    // Insert record
-    const [record] = await this.db
-      .insert(this.schema)
-      .values(result.data)
-      .returning()
+      // Validate and coerce data
+      const result = await validateAndCoerce(this.collection, mainData)
+      if (!result.success) {
+        throw new Error(`Validation failed: ${JSON.stringify(result.errors)}`)
+      }
 
-    // Execute afterCreate hook
-    if (this.collection.hooks?.afterCreate) {
-      await executeHooks(
-        this.collection.hooks.afterCreate,
-        record,
-        context,
-      )
-    }
+      // Insert record
+      const [record] = await tx
+        .insert(this.schema)
+        .values(result.data)
+        .returning()
 
-    return record
+      // Persist relations inside the same transaction
+      await writeRelations(tx, this.collection, record.id, relationValues)
+
+      // Execute afterCreate hook
+      if (this.collection.hooks?.afterCreate) {
+        await executeHooks(
+          this.collection.hooks.afterCreate,
+          record,
+          context,
+        )
+      }
+
+      return record
+    })
   }
 
   /**
    * Update an existing record
    */
   async update(id: any, data: any): Promise<any> {
-    const context: CrudContext = { ...this.context, operation: 'update' }
+    return await this.db.transaction(async (tx) => {
+      const context: CrudContext = { ...this.context, operation: 'update' }
 
-    // Execute beforeUpdate hook
-    if (this.collection.hooks?.beforeUpdate) {
-      data = await executeHooks(
-        this.collection.hooks.beforeUpdate,
-        { id, ...data },
-        context,
-      )
-    }
+      // Execute beforeUpdate hook
+      if (this.collection.hooks?.beforeUpdate) {
+        data = await executeHooks(
+          this.collection.hooks.beforeUpdate,
+          { id, ...data },
+          context,
+        )
+      }
 
-    // Validate and coerce data
-    const result = await validateAndCoerce(this.collection, data)
-    if (!result.success) {
-      throw new Error(`Validation failed: ${JSON.stringify(result.errors)}`)
-    }
+      // Separate relation values from the main-record payload
+      const { mainData, relationValues } = extractRelations(this.collection, data)
 
-    // Update record
-    const [record] = await this.db
-      .update(this.schema)
-      .set(result.data)
-      .where(eq(this.schema.id, id))
-      .returning()
+      // Validate and coerce data
+      const result = await validateAndCoerce(this.collection, mainData)
+      if (!result.success) {
+        throw new Error(`Validation failed: ${JSON.stringify(result.errors)}`)
+      }
 
-    // Execute afterUpdate hook
-    if (this.collection.hooks?.afterUpdate) {
-      await executeHooks(
-        this.collection.hooks.afterUpdate,
-        record,
-        context,
-      )
-    }
+      // Update record
+      const [record] = await tx
+        .update(this.schema)
+        .set(result.data)
+        .where(eq(this.schema.id, id))
+        .returning()
 
-    return record
+      // Persist relations inside the same transaction
+      await writeRelations(tx, this.collection, id, relationValues)
+
+      // Execute afterUpdate hook
+      if (this.collection.hooks?.afterUpdate) {
+        await executeHooks(
+          this.collection.hooks.afterUpdate,
+          record,
+          context,
+        )
+      }
+
+      return record
+    })
   }
 
   /**
    * Delete a record
    */
   async delete(id: any): Promise<{ success: boolean }> {
-    const context: CrudContext = { ...this.context, operation: 'delete' }
+    return await this.db.transaction(async (tx) => {
+      const context: CrudContext = { ...this.context, operation: 'delete' }
 
-    // Execute beforeDelete hook
-    if (this.collection.hooks?.beforeDelete) {
-      const shouldContinue = await executeHooks(
-        this.collection.hooks.beforeDelete,
-        id,
-        context,
-      )
-      if (shouldContinue === false) {
-        throw new Error('Delete operation cancelled by hook')
+      // Execute beforeDelete hook
+      if (this.collection.hooks?.beforeDelete) {
+        const shouldContinue = await executeHooks(
+          this.collection.hooks.beforeDelete,
+          id,
+          context,
+        )
+        if (shouldContinue === false) {
+          throw new Error('Delete operation cancelled by hook')
+        }
       }
-    }
 
-    // Delete record
-    await this.db
-      .delete(this.schema)
-      .where(eq(this.schema.id, id))
+      // Clean up related records inside the same transaction
+      await deleteRelations(tx, this.collection, id)
 
-    // Execute afterDelete hook
-    if (this.collection.hooks?.afterDelete) {
-      await executeHooks(
-        this.collection.hooks.afterDelete,
-        id,
-        context,
-      )
-    }
+      // Delete record
+      await tx
+        .delete(this.schema)
+        .where(eq(this.schema.id, id))
 
-    return { success: true }
+      // Execute afterDelete hook
+      if (this.collection.hooks?.afterDelete) {
+        await executeHooks(
+          this.collection.hooks.afterDelete,
+          id,
+          context,
+        )
+      }
+
+      return { success: true }
+    })
   }
 
   /**
@@ -270,7 +292,7 @@ export class CrudService {
     // Check if the field is marked as sortable in the dashboard config
     const listColumns = this.collection.dashboard?.list?.columns
     if (listColumns && listColumns.length > 0) {
-      const columnConfig = listColumns.find((col) => col.field === sortField)
+      const columnConfig = listColumns.find(col => col.field === sortField)
       if (columnConfig && columnConfig.sortable === false) {
         throw new Error(
           `Field "${sortField}" is not sortable in collection "${this.collection.name}"`,
@@ -326,7 +348,7 @@ export class CrudService {
   private coerceFilterValue(value: any, field: string): any {
     // Handle arrays recursively
     if (Array.isArray(value)) {
-      return value.map((v) => this.coerceFilterValue(v, field))
+      return value.map(v => this.coerceFilterValue(v, field))
     }
 
     // Get the column from schema to check its type
@@ -350,13 +372,13 @@ export class CrudService {
       if (typeof value === 'string' && (value.toLowerCase() === 'true' || value.toLowerCase() === 'false')) {
         return value.toLowerCase() === 'true' ? 1 : 0
       }
-      const num = parseInt(value, 10)
+      const num = Number.parseInt(value, 10)
       return isNaN(num) ? value : num
     }
 
     // Real/Float fields
     if (columnType === 'real' || columnType === 'float' || columnType === 'double' || columnType === 'decimal') {
-      const num = parseFloat(value)
+      const num = Number.parseFloat(value)
       return isNaN(num) ? value : num
     }
 

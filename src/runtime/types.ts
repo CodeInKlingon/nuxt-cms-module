@@ -162,14 +162,39 @@ export interface FormFieldConfig {
   span?: 1 | 2 | 3 | 4
 }
 
-/** Configuration for a relation field in a form. */
-export interface RelationConfig {
+/** Base relation shape. */
+interface RelationConfigBase {
   type: 'one' | 'many'
   collection: string
-  displayField: string
-  foreignKey?: string
-  localKey?: string
 }
+
+/** Relation stored as a FK column on the source collection table. */
+export interface InlineRelationConfig extends RelationConfigBase {
+  storage: 'inline'
+  sourceColumn: string
+}
+
+/** Relation stored as a FK column on the target collection table. */
+export interface InverseRelationConfig extends RelationConfigBase {
+  storage: 'inverse'
+  targetColumn: string
+}
+
+/** Relation stored in a separate junction table. */
+export interface JunctionRelationConfig extends RelationConfigBase {
+  storage: 'junction'
+  junctionTable: string | any
+  sourceJunctionColumn: string
+  targetJunctionColumn: string
+  sortable?: boolean
+  orderColumn?: string
+}
+
+/** Configuration for a relation field in a form. */
+export type RelationConfig
+  = InlineRelationConfig
+    | InverseRelationConfig
+    | JunctionRelationConfig
 
 // ---------------------------------------------------------------------------
 // Validation

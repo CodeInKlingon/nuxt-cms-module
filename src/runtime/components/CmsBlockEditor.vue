@@ -159,7 +159,7 @@
       </div>
       <!-- Drop zone at end of list -->
       <div
-        v-if="modelValue.length > 0"
+        v-if="modelValue?.length > 0"
         class="h-4 rounded-lg border-2 border-dashed transition-colors"
         :class="dragOverIndex === modelValue.length ? 'border-primary-500 bg-primary-50' : 'border-transparent'"
         @dragover.prevent="dragOverIndex = modelValue.length"
@@ -169,7 +169,7 @@
 
     <!-- Empty State -->
     <div
-      v-if="modelValue.length === 0"
+      v-if="modelValue?.length === 0"
       class="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg"
     >
       <p>No blocks yet. Click "Add Block" to get started.</p>

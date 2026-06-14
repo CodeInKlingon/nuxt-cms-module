@@ -77,7 +77,12 @@ export default defineCollection({
                   relation: {
                     type: 'many',
                     collection: 'products',
-                    displayField: 'name',
+                    storage: 'junction',
+                    junctionTable: 'productsToPages',
+                    sourceJunctionColumn: 'pageId',
+                    targetJunctionColumn: 'productId',
+                    sortable: true,
+                    orderColumn: 'order',
                   },
                 },
               ],

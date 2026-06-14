@@ -4,6 +4,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import * as schema from './schema'
+export { schema }
 
 const cwd = process.cwd()
 

@@ -30,6 +30,7 @@ export const pages = sqliteTable('pages', {
 export const productsToPages = sqliteTable('products_to_pages', {
   productId: integer('product_id').notNull().references(() => products.id),
   pageId: integer('page_id').notNull().references(() => pages.id),
+  order: integer('order').notNull().default(0),
 }, t => [primaryKey({ columns: [t.productId, t.pageId] })])
 
 // ── Relations ───────────────────────────────────────────────────────────────
