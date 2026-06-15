@@ -12,6 +12,7 @@ export default defineCollection({
     searchable: true,
     searchColumns: ['name', 'slug', 'description'],
     defaultSort: { field: 'createdAt', order: 'desc' },
+    public: true,
   },
 
   dashboard: {

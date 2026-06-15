@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import type { CollectionDefinition, RelationConfig } from '../../types'
 
 const props = defineProps<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   modelValue: any
   relation?: RelationConfig
+  relationField?: string
   required?: boolean
 }>()
 
@@ -15,6 +17,7 @@ const emit = defineEmits<{
 
 const config = useRuntimeConfig()
 const apiPrefix = computed(() => config.public.cms.api?.prefix || '/api/cms')
+const route = useRoute()
 
 if (!props.relation) {
   throw new Error('RelationWidget requires a relation config')
@@ -23,20 +26,74 @@ if (!props.relation) {
 const relation = props.relation
 const isMultiple = relation.type === 'many'
 
+// ---------------------------------------------------------------------------
+// Saved-relation loading for edit mode
+// ---------------------------------------------------------------------------
+
+const sourceCollection = computed(() => route.params.collection as string | undefined)
+const recordId = computed(() => route.params.id as string | undefined)
+const isEditMode = computed(() => Boolean(sourceCollection.value && recordId.value))
+
+const loadedIds = ref<(string | number)[]>([])
+const savedLoaded = ref(false)
+
 const selectedIds = computed<(string | number)[]>({
   get: () => {
-    if (isMultiple) return Array.isArray(props.modelValue) ? props.modelValue : []
-    return props.modelValue !== undefined && props.modelValue !== null ? [props.modelValue] : []
+    const propValue = props.modelValue
+    const propIds = isMultiple
+      ? (Array.isArray(propValue) ? propValue : [])
+      : (propValue !== undefined && propValue !== null ? [propValue] : [])
+    const result = propIds.length > 0 ? propIds : (savedLoaded.value ? loadedIds.value : [])
+    console.log('[RelationWidget] selectedIds getter', props.relationField, { propValue, propIds, savedLoaded: savedLoaded.value, loadedIds: loadedIds.value, result })
+    return result
   },
   set: (ids) => {
-    if (isMultiple) {
-      emit('update:modelValue', ids)
-    }
-    else {
-      emit('update:modelValue', ids[0] ?? null)
-    }
+    console.log('[RelationWidget] selectedIds setter', props.relationField, ids)
+    loadedIds.value = ids
+    emit('update:modelValue', isMultiple ? ids : ids[0] ?? null)
   },
 })
+
+const shouldLoadSaved = computed(() => {
+  if (!isEditMode.value || !props.relationField) return false
+  if (savedLoaded.value) return false
+  return selectedIds.value.length === 0
+})
+
+const savedRelationsUrl = computed(() => {
+  if (!shouldLoadSaved.value) return null
+  return `${apiPrefix.value}/${sourceCollection.value}/${recordId.value}/relations/${props.relationField}`
+})
+
+const { data: savedRelations, pending: loadingSaved } = useFetch<Record<string, unknown>[]>(
+  savedRelationsUrl,
+  { default: () => [], watch: [shouldLoadSaved] },
+)
+
+watch([savedRelations, loadingSaved], ([records, pending]) => {
+  console.log('[RelationWidget] savedRelations watch', props.relationField, { pending, savedLoaded: savedLoaded.value, records })
+  if (pending || savedLoaded.value) return
+
+  // If the user has already made a selection while the fetch was in flight,
+  // don't overwrite it.
+  const propValue = props.modelValue
+  const propIds = isMultiple
+    ? (Array.isArray(propValue) ? propValue : [])
+    : (propValue !== undefined && propValue !== null ? [propValue] : [])
+  if (propIds.length > 0) {
+    savedLoaded.value = true
+    return
+  }
+
+  savedLoaded.value = true
+  if (!records || records.length === 0) return
+
+  const ids = records.map(r => r.id as string | number)
+  loadedIds.value = ids
+  emit('update:modelValue', isMultiple ? ids : ids[0] ?? null)
+}, { immediate: true })
+
+
 
 const pickerOpen = ref(false)
 
@@ -66,6 +123,10 @@ const { data: selectedRecords } = await useFetch(
   },
   { watch: [selectedIds], default: () => ({ items: [] }) },
 )
+
+watch(selectedRecords, (data) => {
+  console.log('[RelationWidget] selectedRecords changed', props.relationField, data)
+}, { immediate: true })
 
 const recordsById = computed(() => {
   const items = (selectedRecords.value as { items: Record<string, unknown>[] } | null)?.items ?? []

@@ -10,6 +10,7 @@ export default defineCollection({
     sortable: true,
     searchable: false,
     description: 'Generic webpages with block content',
+    public: true,
   },
 
   blocks: {

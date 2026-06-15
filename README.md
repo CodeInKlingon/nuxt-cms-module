@@ -58,11 +58,11 @@ export default defineNuxtConfig({
 
 ```ts
 import { setDrizzleConnection } from 'nuxt-cms/server'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import Database from 'better-sqlite3'
+import { createClient } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
 
-const sqlite = new Database('cms.db')
-const db = drizzle(sqlite)
+const client = createClient({ url: process.env.DATABASE_URL || 'file:cms.db' })
+const db = drizzle(client)
 
 export default defineNitroPlugin(() => {
   setDrizzleConnection(db)

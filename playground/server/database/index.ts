@@ -1,15 +1,16 @@
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { join } from 'node:path'
 import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { createClient } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
+
 import * as schema from './schema'
+
 export { schema }
 
 const cwd = process.cwd()
 
 // Resolve migrations folder relative to cwd (works when started from root or playground/)
-const migrationsFolder = existsSync(join(cwd, 'server/database/migrations/meta/_journal.json'))
+export const migrationsFolder = existsSync(join(cwd, 'server/database/migrations/meta/_journal.json'))
   ? join(cwd, 'server/database/migrations')
   : join(cwd, 'playground/server/database/migrations')
 
@@ -18,16 +19,9 @@ const dbPath = cwd.endsWith('playground') || cwd.includes('playground')
   ? join(cwd, 'playground.db')
   : join(cwd, 'playground/playground.db')
 
-const sqlite = new Database(dbPath)
-
-// Run drizzle-kit migrations
-migrate(drizzle(sqlite), {
-  migrationsFolder,
-})
-
-console.log('[db] Drizzle migrations applied successfully')
+export const client = createClient({ url: `file:${dbPath}` })
 
 // Create drizzle instance
-const db = drizzle(sqlite, { schema })
+export const db = drizzle(client, { schema })
 
 export default db

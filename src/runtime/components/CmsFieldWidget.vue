@@ -39,7 +39,7 @@ const useNewWidgetSystem = computed(() => {
 // Merge relation config into widget options so relation widgets receive it.
 const widgetOptions = computed(() => {
   if (props.field.widget === 'relation' && props.field.relation) {
-    return { ...(props.field.props || {}), relation: props.field.relation }
+    return { ...(props.field.props || {}), relation: props.field.relation, relationField: props.field.field }
   }
   return props.field.props
 })
