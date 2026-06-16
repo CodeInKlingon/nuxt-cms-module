@@ -38,9 +38,9 @@ definePageMeta({
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-default p-4">
-    <div class="w-full max-w-sm">
-      <div class="mb-8 text-center">
+  <div class="fixed inset-0 flex items-center justify-center overflow-y-auto bg-default p-4">
+    <div class="w-full max-w-sm my-auto">
+      <div class="mb-10 text-center">
         <div class="inline-flex items-center justify-center size-12 rounded-xl bg-primary/10 mb-4">
           <UIcon name="i-lucide-layout-dashboard" class="size-6 text-primary" />
         </div>
@@ -52,7 +52,9 @@ definePageMeta({
         </p>
       </div>
 
-      <UCard>
+      <UCard
+        class="w-full"
+      >
         <slot name="form">
           <!-- Custom login form component (only if user provided one) -->
           <!-- Custom component is responsible for its own form submission -->
@@ -66,12 +68,14 @@ definePageMeta({
           >
             <UFormField
               label="Username"
+              class="w-full"
             >
               <UInput
                 v-model="username"
                 type="text"
                 placeholder="Enter username"
                 size="lg"
+                class="w-full"
                 autofocus
                 icon="i-lucide-user"
               />
@@ -79,13 +83,15 @@ definePageMeta({
 
             <UFormField
               label="Password"
-              :error="error"
+              class="w-full"
+              :error="error ? error : undefined"
             >
               <UInput
                 v-model="password"
                 type="password"
                 placeholder="Enter password"
                 size="lg"
+                class="w-full"
                 icon="i-lucide-lock"
               />
             </UFormField>

@@ -5,8 +5,8 @@
 - [x] colection filtering
 - [x] list view custom column rendering (badge coimponent for enums ect)
 - [X] test and verify collection pagination
-- [ ] test & verify relation field
-  - [ ] relation selection definition
+- [x] test & verify relation field
+  - [x] relation selection definition
 - [x] fix form view ui
 - [x] defineWidget()
 - [x] custom auth handling
@@ -18,3 +18,4 @@
         - [x] block preview
           - [ ] improve ui
 - [ ] single item collection cms definition
+- [ ] medias & downloads
