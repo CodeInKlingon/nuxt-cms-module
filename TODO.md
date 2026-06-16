@@ -1,5 +1,5 @@
 
-- [ ] login ui shows password error (red outline on input) on initial load
+- [x] login ui shows password error (red outline on input) on initial load
 - [x] collection search
 - [x] sortable columns
 - [x] colection filtering
@@ -17,5 +17,6 @@
         - [x] prop form
         - [x] block preview
           - [ ] improve ui
+    - [ ] Presets
 - [ ] single item collection cms definition
 - [ ] medias & downloads
