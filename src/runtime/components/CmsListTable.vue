@@ -44,6 +44,12 @@ const tableColumns = computed(() => {
       header: '',
       enableSorting: false,
       accessorFn: (row: Record<string, unknown>) => row.id,
+      meta: {
+        style: {
+          th: { width: '48px' },
+          td: { width: '48px' },
+        },
+      },
     })
   }
   else {
@@ -89,9 +95,9 @@ function onSortingChange(sorting: { id?: string, desc?: boolean }[]) {
 
 <template>
   <div>
-    <UTable
-      :data="items"
-      :columns="tableColumns"
+      <UTable
+        :data="items"
+        :columns="(tableColumns as any)"
       :loading="loading"
       :sorting="sorting"
       :ui="{
@@ -122,7 +128,7 @@ function onSortingChange(sorting: { id?: string, desc?: boolean }[]) {
 
       <template
         v-if="selectable"
-        #selection-cell="{ row }: { row: { original: Record<string, unknown> } }"
+        #selection-cell="{ row }: any"
       >
         <input
           :type="selectionMode === 'single' ? 'radio' : 'checkbox'"

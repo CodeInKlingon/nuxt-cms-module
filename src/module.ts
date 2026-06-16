@@ -590,6 +590,14 @@ declare module '#cms' {
   export type { CmsAuthVerifyFn, CmsLoginCredentials }
 }
 
+declare module '#my-module/db.mjs' {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export const schema: any
+  export default db
+}
+
 declare module '#my-module/auth-handler.mjs' {
   const authHandler: any
   export default authHandler

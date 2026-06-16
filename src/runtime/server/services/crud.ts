@@ -101,7 +101,7 @@ export class CrudService {
    * Create a new record
    */
   async create(data: any): Promise<any> {
-    return await this.db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx: any) => {
       const context: CrudContext = { ...this.context, operation: 'create' }
 
       // Execute beforeCreate hook
@@ -148,7 +148,7 @@ export class CrudService {
    * Update an existing record
    */
   async update(id: any, data: any): Promise<any> {
-    return await this.db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx: any) => {
       const context: CrudContext = { ...this.context, operation: 'update' }
 
       // Execute beforeUpdate hook
@@ -196,7 +196,7 @@ export class CrudService {
    * Delete a record
    */
   async delete(id: any): Promise<{ success: boolean }> {
-    return await this.db.transaction(async (tx) => {
+    return await this.db.transaction(async (tx: any) => {
       const context: CrudContext = { ...this.context, operation: 'delete' }
 
       // Execute beforeDelete hook

@@ -13,6 +13,14 @@ export interface CollectionListColumn {
   enableSorting?: boolean
   meta?: {
     cellConfig?: ListColumnConfig['cell']
+    class?: {
+      th?: string | ((arg: unknown) => string)
+      td?: string | ((arg: unknown) => string)
+    }
+    style?: {
+      th?: Record<string, string> | ((arg: unknown) => Record<string, string>)
+      td?: Record<string, string> | ((arg: unknown) => Record<string, string>)
+    }
   }
 }
 

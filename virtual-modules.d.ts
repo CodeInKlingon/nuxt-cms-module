@@ -6,7 +6,10 @@
 declare module '#my-module/db.mjs' {
   // The user's Drizzle db instance; typed as `any` because the specific schema
   // is defined by the consuming application, not by this module.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export const schema: any
   export default db
 }
 

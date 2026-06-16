@@ -2,7 +2,7 @@ import { defineWidget } from '../../composables/defineWidget'
 import type { RelationConfig } from '../../types'
 import type { BaseFieldOptions, PropTypeConstructor } from '../../types/widgets'
 
-export interface RelationOptions extends BaseFieldOptions, RelationConfig {}
+export type RelationOptions = BaseFieldOptions & RelationConfig
 
 export type RelationValue = string | number | Array<string | number>
 

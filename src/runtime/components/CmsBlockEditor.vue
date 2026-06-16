@@ -23,7 +23,7 @@
       class="space-y-2"
     >
       <div
-        v-for="(block, index) in modelValue"
+        v-for="(block, index) in blocks"
         :key="block.id"
         class="border rounded-lg bg-white overflow-hidden transition-all"
         :class="{
@@ -69,7 +69,7 @@
               icon="i-lucide-chevron-down"
               size="xs"
               variant="ghost"
-              :disabled="index === modelValue.length - 1"
+              :disabled="index === blocks.length - 1"
               @click.stop="moveBlock(index, 1)"
             />
             <UDropdownMenu :items="getBlockContextMenuItems(index)">
@@ -159,17 +159,17 @@
       </div>
       <!-- Drop zone at end of list -->
       <div
-        v-if="modelValue?.length > 0"
+        v-if="blocks.length > 0"
         class="h-4 rounded-lg border-2 border-dashed transition-colors"
-        :class="dragOverIndex === modelValue.length ? 'border-primary-500 bg-primary-50' : 'border-transparent'"
-        @dragover.prevent="dragOverIndex = modelValue.length"
-        @drop.prevent="onDrop($event, modelValue.length)"
+        :class="dragOverIndex === blocks.length ? 'border-primary-500 bg-primary-50' : 'border-transparent'"
+        @dragover.prevent="dragOverIndex = blocks.length"
+        @drop.prevent="onDrop($event, blocks.length)"
       />
     </TransitionGroup>
 
     <!-- Empty State -->
     <div
-      v-if="modelValue?.length === 0"
+      v-if="blocks.length === 0"
       class="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg"
     >
       <p>No blocks yet. Click "Add Block" to get started.</p>
@@ -196,6 +196,24 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:modelValue': [value: BlockItem[]]
 }>()
+
+// Normalise the incoming value so the editor always works with an array.
+// Relation/feature work can leave the field as undefined/null or (in some
+// storage setups) a JSON string, so we defensively coerce those cases.
+const blocks = computed<BlockItem[]>(() => {
+  const value = props.modelValue
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : []
+    }
+    catch {
+      return []
+    }
+  }
+  return []
+})
 
 const selectedId = ref<string | null>(null)
 
@@ -238,7 +256,7 @@ function onDrop(event: DragEvent, index: number) {
   const fromIndex = draggingIndex.value
   const toIndex = index
 
-  const newValue = [...props.modelValue]
+  const newValue = [...blocks.value]
   const [movedItem] = newValue.splice(fromIndex, 1)
 
   if (!movedItem) {
@@ -322,7 +340,7 @@ async function toggleBlock(blockId: string) {
   selectedId.value = blockId
 
   // Find the block
-  const block = props.modelValue.find(b => b.id === blockId)
+  const block = blocks.value.find(b => b.id === blockId)
   if (block) {
     // Load the block component to get its fields
     await loadBlock(block.type)
@@ -332,7 +350,7 @@ async function toggleBlock(blockId: string) {
 // Watch for selected block changes to load fields
 watch(selectedId, async (newId) => {
   if (newId) {
-    const block = props.modelValue.find(b => b.id === newId)
+    const block = blocks.value.find(b => b.id === newId)
     if (block) {
       await loadBlock(block.type)
     }
@@ -354,25 +372,25 @@ async function addBlock(type: string) {
     },
   }
 
-  const newValue = [...props.modelValue, newBlock]
+  const newValue = [...blocks.value, newBlock]
   emit('update:modelValue', newValue)
   selectedId.value = newBlock.id
 }
 
 // Remove a block
 function removeBlock(index: number) {
-  const newValue = props.modelValue.filter((_block, i) => i !== index)
+  const newValue = blocks.value.filter((_block, i) => i !== index)
   emit('update:modelValue', newValue)
 
   // Clear selection if removed block was selected
-  if (selectedId.value === props.modelValue[index]?.id) {
+  if (selectedId.value === blocks.value[index]?.id) {
     selectedId.value = null
   }
 }
 
 // Move a block up or down
 function moveBlock(index: number, direction: number) {
-  const newValue = [...props.modelValue]
+  const newValue = [...blocks.value]
   const targetIndex = index + direction
 
   if (targetIndex < 0 || targetIndex >= newValue.length) return
@@ -411,7 +429,7 @@ function getBlockContextMenuItems(index: number) {
 
 // Duplicate a block
 function duplicateBlock(index: number) {
-  const block = props.modelValue[index]
+  const block = blocks.value[index]
   if (!block) return
 
   const newBlock: BlockItem = {
@@ -424,7 +442,7 @@ function duplicateBlock(index: number) {
     },
   }
 
-  const newValue = [...props.modelValue]
+  const newValue = [...blocks.value]
   newValue.splice(index + 1, 0, newBlock)
   emit('update:modelValue', newValue)
 
@@ -437,7 +455,7 @@ function duplicateBlock(index: number) {
 
 // Copy block to clipboard
 async function copyBlock(index: number) {
-  const block = props.modelValue[index]
+  const block = blocks.value[index]
   if (!block) return
 
   try {
@@ -482,7 +500,7 @@ async function pasteBlock(afterIndex?: number) {
       },
     }
 
-    const newValue = [...props.modelValue]
+    const newValue = [...blocks.value]
     const insertIndex = afterIndex !== undefined ? afterIndex + 1 : newValue.length
     newValue.splice(insertIndex, 0, newBlock)
     emit('update:modelValue', newValue)
@@ -504,7 +522,7 @@ async function pasteBlock(afterIndex?: number) {
 
 // Update a block field
 function updateBlockField(blockId: string, fieldName: string, value: any) {
-  const newValue = props.modelValue.map((block) => {
+  const newValue = blocks.value.map((block) => {
     if (block.id === blockId) {
       return {
         ...block,

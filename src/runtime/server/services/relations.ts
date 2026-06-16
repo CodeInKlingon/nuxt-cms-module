@@ -352,7 +352,7 @@ export async function readRelation(
     )
     const results = await query
     results.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-      return (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0)
+      return Number(orderMap.get(a.id) ?? 0) - Number(orderMap.get(b.id) ?? 0)
     })
     return results
   }

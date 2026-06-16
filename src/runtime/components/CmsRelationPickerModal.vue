@@ -7,6 +7,16 @@ const props = defineProps<{
 const open = defineModel<boolean>('open', { default: false })
 const selectedIds = defineModel<(string | number)[]>('modelValue', { default: () => [] })
 
+const localSelectedIds = ref<(string | number)[]>([])
+
+watch(open, (isOpen) => {
+  if (isOpen) {
+    localSelectedIds.value = [...selectedIds.value]
+  }
+})
+
+const modalContent = { style: { maxWidth: '1280px' } } as any
+
 const {
   collection,
   collectionLabel,
@@ -23,6 +33,7 @@ const {
 } = useCollectionList(toRef(props, 'collectionName'), { initialPageSize: 10 })
 
 function confirm() {
+  selectedIds.value = [...localSelectedIds.value]
   open.value = false
 }
 
@@ -35,7 +46,7 @@ function cancel() {
   <UModal
     v-model:open="open"
     :title="`Select ${collectionLabel}`"
-    :ui="{ content: 'sm:max-w-4xl' }"
+    :content="modalContent"
   >
     <template #body>
       <CmsListToolbar
@@ -55,8 +66,8 @@ function cancel() {
         :cell-columns="cellColumns"
         selectable
         :selection-mode="selectionMode || 'multiple'"
-        :selected-ids="selectedIds"
-        @update:selected-ids="selectedIds = $event"
+        :selected-ids="localSelectedIds"
+        @update:selected-ids="localSelectedIds = $event"
         @update:sort="onSortingChange"
         @update:page="page = $event"
       />

@@ -43,12 +43,11 @@ const selectedIds = computed<(string | number)[]>({
     const propIds = isMultiple
       ? (Array.isArray(propValue) ? propValue : [])
       : (propValue !== undefined && propValue !== null ? [propValue] : [])
-    const result = propIds.length > 0 ? propIds : (savedLoaded.value ? loadedIds.value : [])
-    console.log('[RelationWidget] selectedIds getter', props.relationField, { propValue, propIds, savedLoaded: savedLoaded.value, loadedIds: loadedIds.value, result })
-    return result
+    if (propIds.length > 0) return propIds
+    if (savedLoaded.value) return loadedIds.value
+    return []
   },
   set: (ids) => {
-    console.log('[RelationWidget] selectedIds setter', props.relationField, ids)
     loadedIds.value = ids
     emit('update:modelValue', isMultiple ? ids : ids[0] ?? null)
   },
@@ -60,18 +59,29 @@ const shouldLoadSaved = computed(() => {
   return selectedIds.value.length === 0
 })
 
-const savedRelationsUrl = computed(() => {
-  if (!shouldLoadSaved.value) return null
-  return `${apiPrefix.value}/${sourceCollection.value}/${recordId.value}/relations/${props.relationField}`
+// Reset saved-relation state when the underlying record changes so navigating
+// between records reloads the correct relations.
+watch([sourceCollection, recordId], () => {
+  savedLoaded.value = false
+  loadedIds.value = []
 })
 
-const { data: savedRelations, pending: loadingSaved } = useFetch<Record<string, unknown>[]>(
-  savedRelationsUrl,
-  { default: () => [], watch: [shouldLoadSaved] },
+const savedRelationsKey = computed(() =>
+  `saved-relations-${sourceCollection.value}-${recordId.value}-${props.relationField}`,
+)
+
+const { data: savedRelations, pending: loadingSaved } = await useAsyncData<Record<string, unknown>[]>(
+  () => savedRelationsKey.value,
+  async () => {
+    if (!shouldLoadSaved.value) return []
+    return $fetch<Record<string, unknown>[]>(
+      `${apiPrefix.value}/${sourceCollection.value}/${recordId.value}/relations/${props.relationField}`,
+    )
+  },
+  { default: () => [], watch: [sourceCollection, recordId, () => props.relationField] },
 )
 
 watch([savedRelations, loadingSaved], ([records, pending]) => {
-  console.log('[RelationWidget] savedRelations watch', props.relationField, { pending, savedLoaded: savedLoaded.value, records })
   if (pending || savedLoaded.value) return
 
   // If the user has already made a selection while the fetch was in flight,
@@ -93,8 +103,6 @@ watch([savedRelations, loadingSaved], ([records, pending]) => {
   emit('update:modelValue', isMultiple ? ids : ids[0] ?? null)
 }, { immediate: true })
 
-
-
 const pickerOpen = ref(false)
 
 // Fetch target collection metadata to reuse its list config for cards.
@@ -112,21 +120,18 @@ const listColumns = computed(() =>
 )
 
 // Fetch selected target records whenever the selection changes.
-const { data: selectedRecords } = await useFetch(
-  () => {
-    if (selectedIds.value.length === 0) return null
+const { data: selectedRecords } = await useAsyncData<{ items: Record<string, unknown>[] }>(
+  () => `relation-selected-${relation.collection}-${selectedIds.value.join(',')}`,
+  async () => {
+    if (selectedIds.value.length === 0) return { items: [] }
     const params = new URLSearchParams()
     for (const id of selectedIds.value) {
       params.append('filter_id', String(id))
     }
-    return `/api/cms/${relation.collection}?${params.toString()}`
+    return $fetch<{ items: Record<string, unknown>[] }>(`/api/cms/${relation.collection}?${params.toString()}`)
   },
-  { watch: [selectedIds], default: () => ({ items: [] }) },
+  { default: () => ({ items: [] }), watch: [selectedIds] },
 )
-
-watch(selectedRecords, (data) => {
-  console.log('[RelationWidget] selectedRecords changed', props.relationField, data)
-}, { immediate: true })
 
 const recordsById = computed(() => {
   const items = (selectedRecords.value as { items: Record<string, unknown>[] } | null)?.items ?? []
