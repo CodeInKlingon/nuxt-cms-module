@@ -25,6 +25,17 @@ export const pages = sqliteTable('pages', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 })
 
+// ── Media library ──────────────────────────────────────────────────────────
+
+export const medias = sqliteTable('medias', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  filename: text('filename').notNull(),
+  altText: text('alt_text'),
+  filepath: text('filepath').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+})
+
 // ── Junction table (many-to-many) ─────────────────────────────────────────
 
 export const productsToPages = sqliteTable('products_to_pages', {

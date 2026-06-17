@@ -16,6 +16,7 @@ export default defineNuxtConfig({
     collections: {
       products: './cms/collections/products.ts',
       pages: './cms/collections/pages.ts',
+      medias: './cms/collections/medias.ts',
     },
 
     widgets: [
@@ -23,7 +24,7 @@ export default defineNuxtConfig({
     ],
 
     auth: {
-      // handler: './server/cms-auth.ts',
+      handler: './server/cms-auth.ts',
       // loginPage: './app/components/CustomLoginForm.vue',
     },
 
