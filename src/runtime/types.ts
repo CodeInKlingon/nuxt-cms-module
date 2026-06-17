@@ -304,3 +304,23 @@ export type CmsAuthVerifyFn = (
   event: H3Event,
   credentials: CmsLoginCredentials,
 ) => Promise<Record<string, unknown> | null> | Record<string, unknown> | null
+// ---------------------------------------------------------------------------
+// Custom admin pages
+// ---------------------------------------------------------------------------
+
+/**
+ * Definition for a custom admin page rendered inside the CMS layout.
+ *
+ * Custom pages are registered in `nuxt.config` under `cms.customPages`
+ * and are reachable at `<admin-route>/page/<name>`.
+ */
+export interface CustomPageDefinition {
+  /** Route slug and identifier for the page. */
+  name: string
+  /** Display label used in the admin navigation. */
+  label: string
+  /** Optional icon shown in the admin navigation. */
+  icon?: string
+  /** Path to the Vue component that renders the page (relative to project root). */
+  component: string
+}

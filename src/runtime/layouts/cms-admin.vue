@@ -15,7 +15,7 @@ const { data: collections } = await useFetch<CollectionDefinition[]>(() => `${ap
   default: (): CollectionDefinition[] => [],
 })
 
-const open = ref(false)
+const isOpen = ref(false)
 
 const navLinks = computed<NavigationMenuItem[][]>(() => {
   const collectionItems: NavigationMenuItem[] = collections.value.map(c => ({
@@ -23,7 +23,16 @@ const navLinks = computed<NavigationMenuItem[][]>(() => {
     icon: c.options?.icon || 'i-lucide-layers',
     to: `${adminRoute.value}/${c.name}`,
     onSelect: () => {
-      open.value = false
+      isOpen.value = false
+    },
+  }))
+
+  const customPageItems: NavigationMenuItem[] = (config.public.cms.customPages || []).map((p: { name: string, label: string, icon?: string }) => ({
+    label: p.label,
+    icon: p.icon || 'i-lucide-file-text',
+    to: `${adminRoute.value}/page/${p.name}`,
+    onSelect: () => {
+      isOpen.value = false
     },
   }))
 
@@ -35,10 +44,11 @@ const navLinks = computed<NavigationMenuItem[][]>(() => {
         to: adminRoute.value,
         exact: true,
         onSelect: () => {
-          open.value = false
+          isOpen.value = false
         },
       },
       ...collectionItems,
+      ...customPageItems,
     ],
   ]
 })
@@ -58,7 +68,7 @@ const logout = async () => {
       <UDashboardGroup unit="rem">
         <UDashboardSidebar
           id="cms-sidebar"
-          v-model:open="open"
+          v-model:open="isOpen"
           collapsible
           resizable
           class="bg-elevated/25"
@@ -110,4 +120,10 @@ const logout = async () => {
 <style>
 @import 'tailwindcss';
 @import "@nuxt/ui";
+html,
+body,
+#__nuxt,
+#__nuxt > div {
+  height: 100%;
+}
 </style>

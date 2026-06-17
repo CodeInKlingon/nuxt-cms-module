@@ -27,6 +27,9 @@ export interface ModuleOptions {
   // Collection registration
   collections?: Record<string, string> // { name: path }
 
+  // Custom admin page registration
+  customPages?: Record<string, string> // { name: path }
+
   // Admin panel configuration
   admin?: {
     enabled?: boolean // Default: true
@@ -181,6 +184,15 @@ export const collections = [${colArray}]`,
         getContents: () => 'export default null',
       })
     }
+    // Load custom admin pages from user-defined files
+    const customPages = await loadCustomPages(options, nuxt, logger)
+    for (const page of customPages) {
+      addComponent({
+        name: `CmsCustomPage${toPascalCase(page.name)}`,
+        filePath: page.component,
+        global: true,
+      })
+    }
 
     // // 4. Generate virtual module with collections
     // addTemplate({
@@ -273,8 +285,13 @@ export const collections = [${colArray}]`,
             file: resolver.resolve('./runtime/pages/admin/[collection]/[id].vue'),
           },
         )
+        // Custom admin pages
+        pages.push({
+          name: 'cms-admin-custom-page',
+          path: `${adminRoute}/page/:name`,
+          file: resolver.resolve('./runtime/pages/admin/page/[name].vue'),
+        })
       })
-
       // Add components directory for admin UI
       addComponentsDir({
         path: resolver.resolve('./runtime/components'),
@@ -336,8 +353,13 @@ export const collections = [${colArray}]`,
       auth: {
         hasCustomLoginPage: !!options.auth?.loginPage,
       },
+      customPages: customPages.map(page => ({
+        name: page.name,
+        label: page.label,
+        icon: page.icon,
+        componentName: `CmsCustomPage${toPascalCase(page.name)}`,
+      })),
     } as any
-
     // Do not add the extension since the `.ts` will be transpiled to `.mjs` after `npm run prepack`
     addPlugin(resolver.resolve('./runtime/plugin'))
 
@@ -389,7 +411,8 @@ function setupWidgets(
   addImports([
     { name: 'defineWidget', from: resolver.resolve('./runtime/composables/defineWidget') },
     { name: 'getWidget', from: resolver.resolve('./runtime/composables/getWidget') },
-    { name: 'textField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'defineCollection', from: resolver.resolve('./runtime/composables/defineCollection') },
+    { name: 'defineCustomPage', from: resolver.resolve('./runtime/composables/defineCustomPage') },
     { name: 'numberField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'textareaField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'booleanField', from: resolver.resolve('./runtime/widgets/built-ins') },
@@ -571,12 +594,61 @@ function generateBlockRegistry(blockFiles: Array<{ name: string, path: string }>
 }
 
 /**
+ * Convert a kebab-case or snake_case string to PascalCase.
+ */
+function toPascalCase(input: string): string {
+  return input
+    .replace(/[-_](.)/g, (_, char) => char.toUpperCase())
+    .replace(/^./, char => char.toUpperCase())
+}
+
+/**
+ * Load custom admin pages from user-defined files.
+ */
+async function loadCustomPages(
+  options: ModuleOptions,
+  nuxt: any,
+  logger: ReturnType<typeof useLogger>,
+): Promise<Array<{ name: string, label: string, icon?: string, component: string }>> {
+  if (!options.customPages || Object.keys(options.customPages).length === 0) {
+    return []
+  }
+
+  const toPath = (p: string) => p.replace(/\\/g, '/')
+  const pages: Array<{ name: string, label: string, icon?: string, component: string }> = []
+
+  for (const [key, relPath] of Object.entries(options.customPages)) {
+    try {
+      const absPath = resolve(nuxt.options.rootDir, relPath)
+      const mod = await import(toPath(absPath))
+      const page = mod.default
+
+      if (!page || !page.name) {
+        logger.warn(`Custom page "${key}" does not export a default defineCustomPage() result. Skipping.`)
+        continue
+      }
+
+      pages.push({
+        name: page.name,
+        label: page.label,
+        component: toPath(resolve(nuxt.options.rootDir, page.component)),
+      })
+    }
+    catch (err) {
+      logger.error(`Failed to load custom page "${key}":`, err)
+    }
+  }
+
+  return pages
+}
+
+/**
  * Generate TypeScript type definitions
  */
 function generateTypes(resolver: ReturnType<typeof createResolver>): string {
   return `
 declare module '#cms' {
-  import type { CollectionDefinition, CmsAuthVerifyFn, CmsLoginCredentials } from '${resolver.resolve('./runtime/types')}'
+  import type { CollectionDefinition, CustomPageDefinition, CmsAuthVerifyFn, CmsLoginCredentials } from '${resolver.resolve('./runtime/types')}'
   import type { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField, relationField } from '${resolver.resolve('./runtime/widgets/built-ins')}'
   import type { useRenderBlocks } from '${resolver.resolve('./runtime/composables/useRenderBlocks')}'
 
@@ -585,9 +657,10 @@ declare module '#cms' {
   export function getAllCollections(): CollectionDefinition[]
 
   export { defineCollection } from '${resolver.resolve('./runtime/composables/defineCollection')}'
+  export { defineCustomPage } from '${resolver.resolve('./runtime/composables/defineCustomPage')}'
   export { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField, relationField }
   export { useRenderBlocks }
-  export type { CmsAuthVerifyFn, CmsLoginCredentials }
+  export type { CustomPageDefinition, CmsAuthVerifyFn, CmsLoginCredentials }
 }
 
 declare module '#my-module/db.mjs' {
@@ -625,6 +698,7 @@ declare module 'nuxt/schema' {
       auth?: {
         hasCustomLoginPage: boolean
       }
+      customPages?: { name: string, label: string, icon?: string, componentName: string }[]
     }
   }
 }

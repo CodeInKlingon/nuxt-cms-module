@@ -19,6 +19,10 @@ export default defineNuxtConfig({
       medias: './cms/collections/medias.ts',
     },
 
+    customPages: {
+      media: './cms/pages/media.ts',
+    },
+
     widgets: [
       randomBooleanWidget,
     ],
