@@ -11,12 +11,16 @@
 - [x] defineWidget()
 - [x] custom auth handling
 - [x] block system
-    - [x] block component prop helper functions textField()
-    - [x] block editor
-        - [x] re-arrange (dnd)
-        - [x] prop form
-        - [x] block preview
-          - [ ] improve ui
-    - [ ] Presets
+  - [x] block component prop helper functions textField()
+  - [x] block editor
+      - [x] re-arrange (dnd)
+      - [x] prop form
+      - [x] block preview
+        - [ ] improve ui
+  - [ ] Presets
 - [ ] single item collection cms definition
-- [ ] medias & downloads
+- [x] defineCustomPage 
+- [x] medias & downloads - can live in user space with custom pages and widgets
+  - [ ] improve picker modal
+- [ ] Tailwind utilities not generated for components in `playground/cms/pages` (hotfixed with inline CSS in `playground/cms/pages/MediaLibrary.vue`; configure Tailwind content scanning to remove hotfix)
+- [ ] Two component files resolving to the same name warning

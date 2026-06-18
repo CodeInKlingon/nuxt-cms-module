@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@nuxt/kit": "^4.4.2",
+    "@tanstack/vue-query": "^5.101.0",
     "drizzle-orm": ">=0.38.0",
     "drizzle-zod": "^0.8.0",
     "pathe": "^1.1.2",

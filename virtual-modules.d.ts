@@ -15,5 +15,6 @@ declare module '#my-module/db.mjs' {
 
 declare module '#my-module/collections.mjs' {
   import type { CollectionDefinition } from './src/runtime/types'
+
   export const collections: CollectionDefinition[]
 }

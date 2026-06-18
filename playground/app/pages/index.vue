@@ -2,12 +2,18 @@
   <div>
     <h1>CMS Module Demo</h1>
 
-    <div v-if="products" style="margin: 2rem 0;">
+    <div
+      v-if="products"
+      style="margin: 2rem 0;"
+    >
       <h2>Products</h2>
       <pre>{{ products }}</pre>
     </div>
 
-    <div v-if="pages" style="margin: 2rem 0;">
+    <div
+      v-if="pages"
+      style="margin: 2rem 0;"
+    >
       <h2>Pages</h2>
       <pre>{{ pages }}</pre>
     </div>

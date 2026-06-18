@@ -65,61 +65,59 @@ const logout = async () => {
 <template>
   <UApp>
     <NuxtLoadingIndicator />
-      <UDashboardGroup unit="rem">
-        <UDashboardSidebar
-          id="cms-sidebar"
-          v-model:open="isOpen"
-          collapsible
-          resizable
-          class="bg-elevated/25"
-          :ui="{ footer: 'lg:border-t lg:border-default' }"
-        >
-          <template #header="{ collapsed }">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              block
-              :square="collapsed"
-              :label="collapsed ? undefined : title"
-              icon="i-lucide-layout-dashboard"
-              :to="adminRoute"
-              class="data-[state=open]:bg-elevated font-semibold"
-              :class="[!collapsed && 'py-2']"
-            />
-          </template>
+    <UDashboardGroup unit="rem">
+      <UDashboardSidebar
+        id="cms-sidebar"
+        v-model:open="isOpen"
+        collapsible
+        resizable
+        class="bg-elevated/25"
+        :ui="{ footer: 'lg:border-t lg:border-default' }"
+      >
+        <template #header="{ collapsed }">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            block
+            :square="collapsed"
+            :label="collapsed ? undefined : title"
+            icon="i-lucide-layout-dashboard"
+            :to="adminRoute"
+            class="data-[state=open]:bg-elevated font-semibold"
+            :class="[!collapsed && 'py-2']"
+          />
+        </template>
 
-          <template #default="{ collapsed }">
-            <UNavigationMenu
-              :collapsed="collapsed"
-              :items="navLinks[0]"
-              orientation="vertical"
-              tooltip
-            />
-          </template>
+        <template #default="{ collapsed }">
+          <UNavigationMenu
+            :collapsed="collapsed"
+            :items="navLinks[0]"
+            orientation="vertical"
+            tooltip
+          />
+        </template>
 
-          <template #footer="{ collapsed }">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              block
-              :square="collapsed"
-              :label="collapsed ? undefined : 'Log out'"
-              icon="i-lucide-log-out"
-              :class="[!collapsed && 'py-2']"
-              :ui="{ trailingIcon: 'text-dimmed' }"
-              @click="logout"
-            />
-          </template>
-        </UDashboardSidebar>
+        <template #footer="{ collapsed }">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            block
+            :square="collapsed"
+            :label="collapsed ? undefined : 'Log out'"
+            icon="i-lucide-log-out"
+            :class="[!collapsed && 'py-2']"
+            :ui="{ trailingIcon: 'text-dimmed' }"
+            @click="logout"
+          />
+        </template>
+      </UDashboardSidebar>
 
-        <slot />
-      </UDashboardGroup>
+      <slot />
+    </UDashboardGroup>
   </UApp>
 </template>
 
 <style>
-@import 'tailwindcss';
-@import "@nuxt/ui";
 html,
 body,
 #__nuxt,

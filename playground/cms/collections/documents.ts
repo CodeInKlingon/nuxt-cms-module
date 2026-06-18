@@ -2,12 +2,12 @@ import { defineCollection } from '../../../src/runtime/composables/defineCollect
 import { medias } from '../../server/database/schema'
 
 export default defineCollection({
-  name: 'medias',
+  name: 'documents',
   schema: medias,
 
   options: {
-    label: 'Media',
-    icon: 'i-lucide-image',
+    label: 'Documents',
+    icon: 'i-lucide-file',
     sortable: true,
     searchable: true,
     searchColumns: ['filename', 'altText'],
@@ -27,7 +27,7 @@ export default defineCollection({
         {
           field: 'filepath',
           label: 'Path',
-          cell: { type: 'image'},
+          cell: { type: 'text', truncate: 40 },
         },
         {
           field: 'altText',
@@ -41,7 +41,7 @@ export default defineCollection({
     form: {
       sections: [
         {
-          label: 'Media Details',
+          label: 'Document Details',
           fields: [
             {
               field: 'filename',
@@ -62,7 +62,11 @@ export default defineCollection({
             {
               field: 'filepath',
               label: 'File Path',
-              widget: 'file-upload',
+              widget: 'file-picker',
+              props: {
+                accept: 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                maxSize: 5 * 1024 * 1024,
+              },
             },
           ],
         },

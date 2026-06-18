@@ -6,7 +6,7 @@ import type { CmsAuthVerifyFn } from '../../src/runtime/types'
  * Returns a user object on success, null on failure.
  */
 const verify: CmsAuthVerifyFn = async (_event, credentials) => {
-  console.log("creds", credentials)
+  console.log('creds', credentials)
   const { username, password } = credentials
 
   // Simple hardcoded credentials for demo purposes

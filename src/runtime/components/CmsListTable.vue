@@ -95,9 +95,9 @@ function onSortingChange(sorting: { id?: string, desc?: boolean }[]) {
 
 <template>
   <div>
-      <UTable
-        :data="items"
-        :columns="(tableColumns as any)"
+    <UTable
+      :data="items"
+      :columns="(tableColumns as any)"
       :loading="loading"
       :sorting="sorting"
       :ui="{

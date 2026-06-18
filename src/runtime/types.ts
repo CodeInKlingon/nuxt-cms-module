@@ -183,7 +183,7 @@ export interface InverseRelationConfig extends RelationConfigBase {
 /** Relation stored in a separate junction table. */
 export interface JunctionRelationConfig extends RelationConfigBase {
   storage: 'junction'
-  junctionTable: string | any
+  junctionTable: string | unknown
   sourceJunctionColumn: string
   targetJunctionColumn: string
   sortable?: boolean

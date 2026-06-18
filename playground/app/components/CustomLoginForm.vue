@@ -42,13 +42,13 @@ const login = async () => {
       label="Select password"
       :error="error"
     >
-          <URadioGroup
-            v-model="password"
-            :items="[
-              'password',
-              'incorrect'
-            ]"
-          />
+      <URadioGroup
+        v-model="password"
+        :items="[
+          'password',
+          'incorrect',
+        ]"
+      />
     </UFormField>
 
     <UButton

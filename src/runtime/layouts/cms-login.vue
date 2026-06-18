@@ -10,8 +10,3 @@ appConfig.ui.colors.primary = 'sky'
     <slot />
   </UApp>
 </template>
-
-<style>
-@import 'tailwindcss';
-@import "@nuxt/ui";
-</style>

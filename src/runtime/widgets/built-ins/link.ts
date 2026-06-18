@@ -16,7 +16,6 @@ export const linkWidget = defineWidget<LinkValue, LinkOptions>({
     }
     if (value?.url) {
       try {
-        // eslint-disable-next-line no-new
         new URL(value.url)
       }
       catch {

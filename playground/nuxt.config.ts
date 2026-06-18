@@ -1,3 +1,4 @@
+import { filePickerWidget } from './cms/widgets/file-picker'
 import { randomBooleanWidget } from './cms/widgets/random-boolean'
 
 export default defineNuxtConfig({
@@ -16,7 +17,7 @@ export default defineNuxtConfig({
     collections: {
       products: './cms/collections/products.ts',
       pages: './cms/collections/pages.ts',
-      medias: './cms/collections/medias.ts',
+      documents: './cms/collections/documents.ts',
     },
 
     customPages: {
@@ -24,6 +25,7 @@ export default defineNuxtConfig({
     },
 
     widgets: [
+      filePickerWidget,
       randomBooleanWidget,
     ],
 

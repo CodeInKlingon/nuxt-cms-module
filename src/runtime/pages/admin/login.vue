@@ -42,7 +42,10 @@ definePageMeta({
     <div class="w-full max-w-sm my-auto">
       <div class="mb-10 text-center">
         <div class="inline-flex items-center justify-center size-12 rounded-xl bg-primary/10 mb-4">
-          <UIcon name="i-lucide-layout-dashboard" class="size-6 text-primary" />
+          <UIcon
+            name="i-lucide-layout-dashboard"
+            class="size-6 text-primary"
+          />
         </div>
         <h1 class="text-2xl font-bold text-highlighted">
           {{ title }}
