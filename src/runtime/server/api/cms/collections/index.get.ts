@@ -24,7 +24,20 @@ function serializeFields(fields: FormFieldConfig[]): FormFieldConfig[] {
       }
       return rule
     })
-    return { ...fieldConfig, validation }
+
+    // Relation config may contain the actual Drizzle table object on the
+    // junctionTable key, which cannot be serialized to the client.
+    let relation = fieldConfig.relation
+    if (relation && typeof relation === 'object' && 'junctionTable' in relation) {
+      relation = {
+        ...relation,
+        junctionTable: typeof relation.junctionTable === 'string'
+          ? relation.junctionTable
+          : undefined,
+      } as FormFieldConfig['relation']
+    }
+
+    return { ...fieldConfig, validation, relation }
   })
 }
 

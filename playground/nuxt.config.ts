@@ -1,3 +1,4 @@
+import { filePickerWidget } from './cms/widgets/file-picker'
 import { randomBooleanWidget } from './cms/widgets/random-boolean'
 
 export default defineNuxtConfig({
@@ -16,14 +17,20 @@ export default defineNuxtConfig({
     collections: {
       products: './cms/collections/products.ts',
       pages: './cms/collections/pages.ts',
+      documents: './cms/collections/documents.ts',
+    },
+
+    customPages: {
+      media: './cms/pages/media.ts',
     },
 
     widgets: [
+      filePickerWidget,
       randomBooleanWidget,
     ],
 
     auth: {
-      // handler: './server/cms-auth.ts',
+      handler: './server/cms-auth.ts',
       // loginPage: './app/components/CustomLoginForm.vue',
     },
 

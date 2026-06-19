@@ -46,7 +46,6 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, h } from 'vue'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface Props {
   widget: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,10 +68,10 @@ const emit = defineEmits<{
 // Error component using render function (no template compilation needed)
 const ErrorComponent = {
   setup() {
-    return () => h('div', { 
-      class: 'p-4 bg-red-50 text-red-600 rounded border border-red-200' 
+    return () => h('div', {
+      class: 'p-4 bg-red-50 text-red-600 rounded border border-red-200',
     }, 'Error loading widget')
-  }
+  },
 }
 
 // Widget component resolution
@@ -86,6 +85,7 @@ const widgetComponent = computed(() => {
     select: defineAsyncComponent(() => import('../widgets/built-ins/SelectWidget.vue')),
     link: defineAsyncComponent(() => import('../widgets/built-ins/LinkWidget.vue')),
     blocks: defineAsyncComponent(() => import('../widgets/built-ins/BlocksWidget.vue')),
+    relation: defineAsyncComponent(() => import('../widgets/built-ins/RelationWidget.vue')),
   }
 
   // Check built-in widgets first
@@ -112,10 +112,10 @@ const widgetComponent = computed(() => {
       // Return error component if widget not found (using render function)
       return {
         setup() {
-          return () => h('div', { 
-            class: 'p-4 bg-red-50 text-red-600 rounded border border-red-200' 
+          return () => h('div', {
+            class: 'p-4 bg-red-50 text-red-600 rounded border border-red-200',
           }, `Widget "${props.widget}" not found`)
-        }
+        },
       }
     },
     errorComponent: ErrorComponent,

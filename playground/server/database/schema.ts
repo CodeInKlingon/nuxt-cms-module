@@ -1,4 +1,7 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core'
+import { relations } from 'drizzle-orm'
+
+// ── Core tables ─────────────────────────────────────────────────────────────
 
 export const products = sqliteTable('products', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -21,3 +24,43 @@ export const pages = sqliteTable('pages', {
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 })
+
+// ── Media library ──────────────────────────────────────────────────────────
+
+export const medias = sqliteTable('medias', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  filename: text('filename').notNull(),
+  altText: text('alt_text'),
+  filepath: text('filepath').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+})
+
+// ── Junction table (many-to-many) ─────────────────────────────────────────
+
+export const productsToPages = sqliteTable('products_to_pages', {
+  productId: integer('product_id').notNull().references(() => products.id),
+  pageId: integer('page_id').notNull().references(() => pages.id),
+  order: integer('order').notNull().default(0),
+}, t => [primaryKey({ columns: [t.productId, t.pageId] })])
+
+// ── Relations ───────────────────────────────────────────────────────────────
+
+export const productsRelations = relations(products, ({ many }) => ({
+  pages: many(productsToPages),
+}))
+
+export const pagesRelations = relations(pages, ({ many }) => ({
+  products: many(productsToPages),
+}))
+
+export const productsToPagesRelations = relations(productsToPages, ({ one }) => ({
+  product: one(products, {
+    fields: [productsToPages.productId],
+    references: [products.id],
+  }),
+  page: one(pages, {
+    fields: [productsToPages.pageId],
+    references: [pages.id],
+  }),
+}))

@@ -31,28 +31,24 @@ const label = computed(() => {
 // All widgets now go through the new widget system (including auto-discovered custom widgets)
 const useNewWidgetSystem = computed(() => {
   // Skip special handling widgets that have their own rendering logic
-  const specialWidgets = ['relation', 'richtext', 'date', 'datetime', 'multiselect', 'image', 'file', 'json', 'array']
+  const specialWidgets = ['richtext', 'date', 'datetime', 'multiselect', 'image', 'file', 'json', 'array']
   const widget = props.field.widget || 'text'
   return !specialWidgets.includes(widget)
+})
+
+// Merge relation config into widget options so relation widgets receive it.
+const widgetOptions = computed(() => {
+  if (props.field.widget === 'relation' && props.field.relation) {
+    return { ...(props.field.props || {}), relation: props.field.relation, relationField: props.field.field }
+  }
+  return props.field.props
 })
 </script>
 
 <template>
-  <!-- Skip relation fields — rendered separately -->
-  <template v-if="field.relation">
-    <UFormField
-      :label="label"
-      :help="field.description"
-    >
-      <p class="text-sm text-muted italic">
-        Relation field ({{ field.relation.type }}: {{ field.relation.collection }}) — inline editing coming soon.
-      </p>
-    </UFormField>
-  </template>
-
   <!-- Use new widget system for supported widgets -->
   <UFormField
-    v-else-if="useNewWidgetSystem"
+    v-if="useNewWidgetSystem"
     :label="label"
     :required="field.required"
     :error="error"
@@ -61,7 +57,7 @@ const useNewWidgetSystem = computed(() => {
     <CmsWidgetRenderer
       :widget="field.widget || 'text'"
       :model-value="value"
-      :options="field.props"
+      :options="widgetOptions"
       @update:model-value="value = $event"
     />
   </UFormField>

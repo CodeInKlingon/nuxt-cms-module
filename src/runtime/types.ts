@@ -162,14 +162,39 @@ export interface FormFieldConfig {
   span?: 1 | 2 | 3 | 4
 }
 
-/** Configuration for a relation field in a form. */
-export interface RelationConfig {
+/** Base relation shape. */
+interface RelationConfigBase {
   type: 'one' | 'many'
   collection: string
-  displayField: string
-  foreignKey?: string
-  localKey?: string
 }
+
+/** Relation stored as a FK column on the source collection table. */
+export interface InlineRelationConfig extends RelationConfigBase {
+  storage: 'inline'
+  sourceColumn: string
+}
+
+/** Relation stored as a FK column on the target collection table. */
+export interface InverseRelationConfig extends RelationConfigBase {
+  storage: 'inverse'
+  targetColumn: string
+}
+
+/** Relation stored in a separate junction table. */
+export interface JunctionRelationConfig extends RelationConfigBase {
+  storage: 'junction'
+  junctionTable: string | unknown
+  sourceJunctionColumn: string
+  targetJunctionColumn: string
+  sortable?: boolean
+  orderColumn?: string
+}
+
+/** Configuration for a relation field in a form. */
+export type RelationConfig
+  = InlineRelationConfig
+    | InverseRelationConfig
+    | JunctionRelationConfig
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -279,3 +304,23 @@ export type CmsAuthVerifyFn = (
   event: H3Event,
   credentials: CmsLoginCredentials,
 ) => Promise<Record<string, unknown> | null> | Record<string, unknown> | null
+// ---------------------------------------------------------------------------
+// Custom admin pages
+// ---------------------------------------------------------------------------
+
+/**
+ * Definition for a custom admin page rendered inside the CMS layout.
+ *
+ * Custom pages are registered in `nuxt.config` under `cms.customPages`
+ * and are reachable at `<admin-route>/page/<name>`.
+ */
+export interface CustomPageDefinition {
+  /** Route slug and identifier for the page. */
+  name: string
+  /** Display label used in the admin navigation. */
+  label: string
+  /** Optional icon shown in the admin navigation. */
+  icon?: string
+  /** Path to the Vue component that renders the page (relative to project root). */
+  component: string
+}

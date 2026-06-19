@@ -21,12 +21,12 @@ export interface WidgetRegistryEntry {
 
 // Field function returned by defineWidget
 export type FieldFunction<TValue, TOptions> = (
-  options?: TOptions
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options?: TOptions,
+
 ) => VuePropDefinition<TValue, TOptions>
 
 // Vue prop definition with CMS metadata
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export interface VuePropDefinition<TValue, TOptions> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type: any
@@ -50,8 +50,6 @@ export interface WidgetComponentProps<T> {
 export interface WidgetComponentEmits<T> {
   'update:modelValue': [value: T]
 }
-
-// eslint-disable-next-line @stylistic/operator-linebreak
 
 // Validation rule types
 export interface ValidationRule {
@@ -139,15 +137,15 @@ export interface RepeaterOptions extends BaseFieldOptions {
 }
 
 // Block field types
-export type BlockFieldType =
-  | 'text'
-  | 'textarea'
-  | 'number'
-  | 'boolean'
-  | 'select'
-  | 'link'
-  | 'relation'
-  | 'repeater'
+export type BlockFieldType
+  = | 'text'
+    | 'textarea'
+    | 'number'
+    | 'boolean'
+    | 'select'
+    | 'link'
+    | 'relation'
+    | 'repeater'
 
 // Block item structure
 export interface BlockItem {

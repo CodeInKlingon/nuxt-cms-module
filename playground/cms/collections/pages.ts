@@ -10,6 +10,7 @@ export default defineCollection({
     sortable: true,
     searchable: false,
     description: 'Generic webpages with block content',
+    public: true,
   },
 
   blocks: {
@@ -69,6 +70,21 @@ export default defineCollection({
                   label: 'Published',
                   widget: 'boolean',
                   defaultValue: false,
+                },
+                {
+                  field: 'products',
+                  label: 'Related Products',
+                  widget: 'relation',
+                  relation: {
+                    type: 'many',
+                    collection: 'products',
+                    storage: 'junction',
+                    junctionTable: 'productsToPages',
+                    sourceJunctionColumn: 'pageId',
+                    targetJunctionColumn: 'productId',
+                    sortable: true,
+                    orderColumn: 'order',
+                  },
                 },
               ],
             },

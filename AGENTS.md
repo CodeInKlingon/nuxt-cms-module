@@ -2,8 +2,7 @@
 
 Agent guide for `starter-module` (Nuxt module: `nuxt-cms`).
 Use this as the default operating manual for coding agents working in this repo.
-check 
-[text](IMPLEMENTATION_PLAN.md) for more information on this project. 
+Check [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for more information on this project.
 
 ## Project Snapshot
 

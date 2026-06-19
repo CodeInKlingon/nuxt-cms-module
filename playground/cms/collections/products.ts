@@ -12,6 +12,7 @@ export default defineCollection({
     searchable: true,
     searchColumns: ['name', 'slug', 'description'],
     defaultSort: { field: 'createdAt', order: 'desc' },
+    public: true,
   },
 
   dashboard: {
@@ -85,6 +86,21 @@ export default defineCollection({
                   label: 'Active',
                   widget: 'random-boolean',
                   defaultValue: true,
+                },
+                {
+                  field: 'pages',
+                  label: 'Related Pages',
+                  widget: 'relation',
+                  relation: {
+                    type: 'many',
+                    collection: 'pages',
+                    storage: 'junction',
+                    junctionTable: 'productsToPages',
+                    sourceJunctionColumn: 'productId',
+                    targetJunctionColumn: 'pageId',
+                    sortable: true,
+                    orderColumn: 'order',
+                  },
                 },
               ],
             },

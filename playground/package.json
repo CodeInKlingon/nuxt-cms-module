@@ -5,15 +5,14 @@
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
-    "generate": "nuxt generate"
+    "generate": "nuxt generate",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "better-sqlite3": "^12.8.0",
+    "@libsql/client": "^0.17.3",
     "drizzle-orm": "^0.45.0",
     "my-module": "latest",
     "nuxt": "^4.4.2"
-  },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13"
   }
 }

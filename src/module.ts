@@ -17,15 +17,37 @@ import {
   addTemplate,
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
-import { resolve } from 'pathe'
+import { existsSync, readdirSync } from 'node:fs'
+import { resolve, basename } from 'pathe'
+import type { Nuxt, PublicRuntimeConfig, RuntimeConfig } from '@nuxt/schema'
 
-// Module options TypeScript interface definition
+export interface CmsLogger {
+  info: (...args: unknown[]) => void
+  warn: (...args: unknown[]) => void
+  error: (...args: unknown[]) => void
+  debug: (...args: unknown[]) => void
+}
+export interface NuxtResolver {
+  resolve: (...path: string[]) => string
+}
+
+export interface CmsRuntimeConfig {
+  admin: {
+    password?: string
+  }
+  auth: {
+    hasCustomHandler: boolean
+  }
+}
 export interface ModuleOptions {
   // Path to the user's Drizzle database file (must have a default export of the db instance)
   database?: string
 
   // Collection registration
   collections?: Record<string, string> // { name: path }
+
+  // Custom admin page registration
+  customPages?: Record<string, string> // { name: path }
 
   // Admin panel configuration
   admin?: {
@@ -61,7 +83,7 @@ export interface ModuleOptions {
   }
 
   // Widget configuration
-  widgets?: Array<() => any> // User-defined widgets from defineWidget()
+  widgets?: Array<() => unknown> // User-defined widgets from defineWidget()
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -73,11 +95,11 @@ export default defineNuxtModule<ModuleOptions>({
     },
   },
 
-  moduleDependencies(nuxt) {
-    const dependencies: Record<string, any> = {}
+  moduleDependencies(nuxt: Nuxt) {
+    const dependencies: Record<string, { version?: string }> = {}
 
     // Only require UI modules if admin panel is enabled
-    const cmsOptions = (nuxt.options as any).cms as ModuleOptions | undefined
+    const cmsOptions = (nuxt.options as Nuxt['options'] & { cms?: ModuleOptions }).cms
     if (cmsOptions?.admin?.enabled !== false) {
       dependencies['@nuxt/ui'] = {
         version: '>=4.0.0',
@@ -119,6 +141,7 @@ export default defineNuxtModule<ModuleOptions>({
   async setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
     const logger = useLogger('nuxt-cms')
+    nuxt.options.css.push(resolver.resolve('./runtime/style.css'))
 
     // Register nuxt-auth-utils server functions as Nitro auto-imports for this module's
     // runtime server files. addServerImportsDir only applies to the consuming app's
@@ -143,7 +166,7 @@ export default defineNuxtModule<ModuleOptions>({
         const absPath = resolve(nuxt.options.rootDir, relPath)
         return `import _col${i} from '${toPath(absPath)}'`
       })
-      .join('\n')
+        .join('\n')
 
       const colArray = Object.entries(options.collections).map((_, i) => `_col${i}`).join(', ')
 
@@ -157,7 +180,7 @@ export const collections = [${colArray}]`,
     if (options.database) {
       addServerTemplate({
         filename: '#my-module/db.mjs',
-        getContents: () => `export { default } from '${resolve(nuxt.options.rootDir, options.database!)}'`,
+        getContents: () => `export { default, schema } from '${resolve(nuxt.options.rootDir, options.database!)}'`,
       })
     }
     else {
@@ -179,6 +202,15 @@ export const collections = [${colArray}]`,
       addServerTemplate({
         filename: '#my-module/auth-handler.mjs',
         getContents: () => 'export default null',
+      })
+    }
+    // Load custom admin pages from user-defined files
+    const customPages = await loadCustomPages(options, nuxt, logger)
+    for (const page of customPages) {
+      addComponent({
+        name: `CmsCustomPage${toPascalCase(page.name)}`,
+        filePath: page.component,
+        global: true,
       })
     }
 
@@ -217,6 +249,13 @@ export const collections = [${colArray}]`,
       route: joinURL(options.api?.prefix || '/api/cms', '/collections'),
       method: 'get',
       handler: resolver.resolve('./runtime/server/api/cms/collections/index.get'),
+    })
+
+    // Relation read endpoint — must be before the catch-all
+    addServerHandler({
+      route: joinURL(options.api?.prefix || '/api/cms', '/:collection/:id/relations/:field'),
+      method: 'get',
+      handler: resolver.resolve('./runtime/server/api/cms/relations/index.get'),
     })
 
     addServerHandler({
@@ -266,8 +305,13 @@ export const collections = [${colArray}]`,
             file: resolver.resolve('./runtime/pages/admin/[collection]/[id].vue'),
           },
         )
+        // Custom admin pages
+        pages.push({
+          name: 'cms-admin-custom-page',
+          path: `${adminRoute}/page/:name`,
+          file: resolver.resolve('./runtime/pages/admin/page/[name].vue'),
+        })
       })
-
       // Add components directory for admin UI
       addComponentsDir({
         path: resolver.resolve('./runtime/components'),
@@ -308,7 +352,7 @@ export const collections = [${colArray}]`,
     }
 
     // 8. Store options in runtime config
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     nuxt.options.runtimeConfig.cms = {
       admin: {
         password: options.admin?.password,
@@ -316,9 +360,8 @@ export const collections = [${colArray}]`,
       auth: {
         hasCustomHandler: !!options.auth?.handler,
       },
-    } as any
+    } as unknown as NonNullable<RuntimeConfig['cms']>
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     nuxt.options.runtimeConfig.public.cms = {
       admin: {
         route: options.admin?.route || '/admin',
@@ -330,8 +373,13 @@ export const collections = [${colArray}]`,
       auth: {
         hasCustomLoginPage: !!options.auth?.loginPage,
       },
-    } as any
-
+      customPages: customPages.map(page => ({
+        name: page.name,
+        label: page.label,
+        icon: page.icon,
+        componentName: `CmsCustomPage${toPascalCase(page.name)}`,
+      })),
+    } as unknown as NonNullable<PublicRuntimeConfig['cms']>
     // Do not add the extension since the `.ts` will be transpiled to `.mjs` after `npm run prepack`
     addPlugin(resolver.resolve('./runtime/plugin'))
 
@@ -375,42 +423,41 @@ export const collections = [${colArray}]`,
  */
 function setupWidgets(
   options: ModuleOptions,
-  nuxt: any,
-  resolver: ReturnType<typeof createResolver>,
-  logger: ReturnType<typeof useLogger>,
+  nuxt: Nuxt,
+  resolver: NuxtResolver,
+  logger: CmsLogger,
 ) {
   // Auto-import widget composables
   addImports([
     { name: 'defineWidget', from: resolver.resolve('./runtime/composables/defineWidget') },
     { name: 'getWidget', from: resolver.resolve('./runtime/composables/getWidget') },
-    { name: 'textField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'defineCollection', from: resolver.resolve('./runtime/composables/defineCollection') },
+    { name: 'defineCustomPage', from: resolver.resolve('./runtime/composables/defineCustomPage') },
     { name: 'numberField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'textareaField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'booleanField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'selectField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'linkField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'blocksField', from: resolver.resolve('./runtime/widgets/built-ins') },
+    { name: 'relationField', from: resolver.resolve('./runtime/widgets/built-ins') },
     { name: 'useBlockComponents', from: resolver.resolve('./runtime/composables/useBlockComponents') },
     { name: 'useRenderBlocks', from: resolver.resolve('./runtime/composables/useRenderBlocks') },
+    { name: 'useCollectionList', from: resolver.resolve('./runtime/composables/useCollectionList') },
   ])
 
   // Path to user's widgets directory
   const widgetsDir = resolve(nuxt.options.rootDir, 'cms/widgets')
-
   // Scan for custom widget components
   const widgetFiles: Array<{ name: string, path: string }> = []
-  if (require('fs').existsSync(widgetsDir)) {
-    const fs = require('fs')
-    const path = require('path')
-    const files = fs.readdirSync(widgetsDir)
+  if (existsSync(widgetsDir)) {
+    const files = readdirSync(widgetsDir)
       .filter((f: string) => f.endsWith('.vue'))
       .map((f: string) => ({
-        name: path.basename(f, '.vue'),
+        name: basename(f, '.vue'),
         path: resolve(widgetsDir, f),
       }))
     widgetFiles.push(...files)
   }
-
   // Also support widgets passed via options
   const userWidgets = options.widgets || []
 
@@ -440,9 +487,9 @@ function setupWidgets(
  * Generate widget registry virtual module
  */
 function generateWidgetRegistry(
-  resolver: ReturnType<typeof createResolver>,
+  resolver: NuxtResolver,
   widgetFiles: Array<{ name: string, path: string }>,
-  userWidgets: Array<() => any>,
+  _userWidgets: Array<() => unknown>,
 ): string {
   const lines: string[] = [
     '// Auto-generated widget registry',
@@ -455,6 +502,7 @@ function generateWidgetRegistry(
     `  select: () => import('${resolver.resolve('./runtime/widgets/built-ins/SelectWidget.vue')}'),`,
     `  link: () => import('${resolver.resolve('./runtime/widgets/built-ins/LinkWidget.vue')}'),`,
     `  blocks: () => import('${resolver.resolve('./runtime/widgets/built-ins/BlocksWidget.vue')}'),`,
+    `  relation: () => import('${resolver.resolve('./runtime/widgets/built-ins/RelationWidget.vue')}'),`,
   ]
 
   // Add user-defined widgets from cms/widgets directory
@@ -489,49 +537,45 @@ function generateWidgetRegistry(
  */
 function setupBlockComponents(
   options: ModuleOptions,
-  nuxt: any,
-  resolver: ReturnType<typeof createResolver>,
-  logger: ReturnType<typeof useLogger>,
+  nuxt: Nuxt,
+  resolver: NuxtResolver,
+  logger: CmsLogger,
 ) {
   // Path to user's blocks directory
   const blocksDir = resolve(nuxt.options.rootDir, 'cms/blocks')
-
-  // Check if blocks directory exists
-  if (!require('fs').existsSync(blocksDir)) {
-    logger.debug('No cms/blocks directory found, skipping block component registration')
-    return
-  }
-
   // Scan for block components
-  const fs = require('fs')
-  const path = require('path')
-  const blockFiles = fs.readdirSync(blocksDir)
-    .filter((f: string) => f.endsWith('.vue'))
-    .map((f: string) => ({
-      name: path.basename(f, '.vue'),
-      path: resolve(blocksDir, f),
-    }))
-
+  const blockFiles = existsSync(blocksDir)
+    ? readdirSync(blocksDir)
+        .filter((f: string) => f.endsWith('.vue'))
+        .map((f: string) => ({
+          name: basename(f, '.vue'),
+          path: resolve(blocksDir, f),
+        }))
+    : []
   if (blockFiles.length === 0) {
     logger.debug('No block components found in cms/blocks')
-    return
   }
 
-  // Generate virtual block registry module
+  // Always generate the virtual block registry module so #cms/blocks resolves,
+  // even when no user-defined blocks exist.
   addTemplate({
     filename: '#cms/blocks.mjs',
     write: true,
     getContents: () => generateBlockRegistry(blockFiles),
   })
 
-  // Add components directory for blocks
-  addComponentsDir({
-    path: blocksDir,
-    global: true,
-    prefix: '',
-  })
+  // Add components directory for blocks only when the directory exists
+  if (existsSync(blocksDir)) {
+    addComponentsDir({
+      path: blocksDir,
+      global: true,
+      prefix: '',
+    })
+  }
 
-  logger.info(`Block components registered from ${blocksDir}: ${blockFiles.map((b: { name: string }) => b.name).join(', ')}`)
+  if (blockFiles.length > 0) {
+    logger.info(`Block components registered from ${blocksDir}: ${blockFiles.map(b => b.name).join(', ')}`)
+  }
 }
 
 /**
@@ -562,13 +606,62 @@ function generateBlockRegistry(blockFiles: Array<{ name: string, path: string }>
 }
 
 /**
+ * Convert a kebab-case or snake_case string to PascalCase.
+ */
+function toPascalCase(input: string): string {
+  return input
+    .replace(/[-_](.)/g, (_, char) => char.toUpperCase())
+    .replace(/^./, char => char.toUpperCase())
+}
+
+/**
+ * Load custom admin pages from user-defined files.
+ */
+async function loadCustomPages(
+  options: ModuleOptions,
+  nuxt: Nuxt,
+  logger: CmsLogger,
+): Promise<Array<{ name: string, label: string, icon?: string, component: string }>> {
+  if (!options.customPages || Object.keys(options.customPages).length === 0) {
+    return []
+  }
+
+  const toPath = (p: string) => p.replace(/\\/g, '/')
+  const pages: Array<{ name: string, label: string, icon?: string, component: string }> = []
+
+  for (const [key, relPath] of Object.entries(options.customPages)) {
+    try {
+      const absPath = resolve(nuxt.options.rootDir, relPath)
+      const mod = await import(toPath(absPath))
+      const page = mod.default
+
+      if (!page || !page.name) {
+        logger.warn(`Custom page "${key}" does not export a default defineCustomPage() result. Skipping.`)
+        continue
+      }
+
+      pages.push({
+        name: page.name,
+        label: page.label,
+        component: toPath(resolve(nuxt.options.rootDir, page.component)),
+      })
+    }
+    catch (err) {
+      logger.error(`Failed to load custom page "${key}":`, err)
+    }
+  }
+
+  return pages
+}
+
+/**
  * Generate TypeScript type definitions
  */
-function generateTypes(resolver: ReturnType<typeof createResolver>): string {
+function generateTypes(resolver: NuxtResolver): string {
   return `
 declare module '#cms' {
-  import type { CollectionDefinition, CmsAuthVerifyFn, CmsLoginCredentials } from '${resolver.resolve('./runtime/types')}'
-  import type { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField } from '${resolver.resolve('./runtime/widgets/built-ins')}'
+  import type { CollectionDefinition, CustomPageDefinition, CmsAuthVerifyFn, CmsLoginCredentials } from '${resolver.resolve('./runtime/types')}'
+  import type { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField, relationField } from '${resolver.resolve('./runtime/widgets/built-ins')}'
   import type { useRenderBlocks } from '${resolver.resolve('./runtime/composables/useRenderBlocks')}'
 
   export const collections: CollectionDefinition[]
@@ -576,25 +669,30 @@ declare module '#cms' {
   export function getAllCollections(): CollectionDefinition[]
 
   export { defineCollection } from '${resolver.resolve('./runtime/composables/defineCollection')}'
-  export { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField }
+  export { defineCustomPage } from '${resolver.resolve('./runtime/composables/defineCustomPage')}'
+  export { defineWidget, textField, numberField, textareaField, booleanField, selectField, linkField, blocksField, relationField }
   export { useRenderBlocks }
-  export type { CmsAuthVerifyFn, CmsLoginCredentials }
+  export type { CustomPageDefinition, CmsAuthVerifyFn, CmsLoginCredentials }
+}
+
+declare module '#my-module/db.mjs' {
+  const db: unknown
+  export const schema: unknown
+  export default db
 }
 
 declare module '#my-module/auth-handler.mjs' {
-  const authHandler: any
+  const authHandler: unknown
   export default authHandler
 }
 
 declare module '#my-module/collections.mjs' {
-  export const collections: any[]
+  export const collections: unknown[]
 }
-
 declare module '#cms/blocks' {
-  export const blockComponents: Record<string, () => Promise<any>>
-  export function loadBlockComponent(name: string): Promise<any>
+  export const blockComponents: Record<string, () => Promise<unknown>>
+  export function loadBlockComponent(name: string): Promise<unknown>
 }
-
 declare module 'nuxt/schema' {
   interface PublicRuntimeConfig {
     cms: {
@@ -608,6 +706,7 @@ declare module 'nuxt/schema' {
       auth?: {
         hasCustomLoginPage: boolean
       }
+      customPages?: { name: string, label: string, icon?: string, componentName: string }[]
     }
   }
 }

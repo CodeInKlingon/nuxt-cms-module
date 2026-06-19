@@ -63,7 +63,10 @@ definePageMeta({
                   <p class="font-semibold text-highlighted truncate group-hover:text-primary transition-colors">
                     {{ collection.options?.label || collection.name }}
                   </p>
-                  <p v-if="collection.options?.description" class="mt-0.5 text-sm text-muted truncate">
+                  <p
+                    v-if="collection.options?.description"
+                    class="mt-0.5 text-sm text-muted truncate"
+                  >
                     {{ collection.options.description }}
                   </p>
                   <!-- <p v-else class="mt-0.5 text-sm text-muted">
@@ -80,8 +83,14 @@ definePageMeta({
           </NuxtLink>
         </div>
 
-        <div v-if="!collections.length" class="flex flex-col items-center justify-center py-16 text-center">
-          <UIcon name="i-lucide-inbox" class="size-12 text-muted mb-4" />
+        <div
+          v-if="!collections.length"
+          class="flex flex-col items-center justify-center py-16 text-center"
+        >
+          <UIcon
+            name="i-lucide-inbox"
+            class="size-12 text-muted mb-4"
+          />
           <p class="text-base font-medium text-highlighted">
             No collections
           </p>

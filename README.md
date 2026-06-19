@@ -58,11 +58,11 @@ export default defineNuxtConfig({
 
 ```ts
 import { setDrizzleConnection } from 'nuxt-cms/server'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import Database from 'better-sqlite3'
+import { createClient } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
 
-const sqlite = new Database('cms.db')
-const db = drizzle(sqlite)
+const client = createClient({ url: process.env.DATABASE_URL || 'file:cms.db' })
+const db = drizzle(client)
 
 export default defineNitroPlugin(() => {
   setDrizzleConnection(db)
@@ -266,6 +266,38 @@ hooks: {
   },
 }
 ```
+## Custom Admin Pages
+
+You can register custom pages inside the CMS admin panel. This is useful for screens that do not fit the standard collection CRUD pattern, such as a media library or analytics dashboard.
+
+1. Create a page definition file (`cms/pages/media.ts`):
+
+```ts
+import { defineCustomPage } from '#cms'
+
+export default defineCustomPage({
+  name: 'media',
+  label: 'Media Library',
+  icon: 'i-lucide-image',
+  component: './cms/pages/MediaLibrary.vue',
+})
+```
+
+2. Create the Vue component that renders the page (`cms/pages/MediaLibrary.vue`). The component receives `pageName`, `adminRoute`, and `apiPrefix` props and is rendered inside the CMS admin layout.
+
+3. Register the page in `nuxt.config.ts`:
+
+```ts
+export default defineNuxtConfig({
+  cms: {
+    customPages: {
+      media: './cms/pages/media.ts',
+    },
+  },
+})
+```
+
+Custom pages are reachable at `<admin-route>/page/<name>` and automatically appear in the admin sidebar.
 
 ## Configuration
 

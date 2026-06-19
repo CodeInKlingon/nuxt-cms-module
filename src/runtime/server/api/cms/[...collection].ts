@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   const apiPrefix = '/api/cms'
   const pathAfterPrefix = url.replace(apiPrefix, '').split('?')[0] || '' // Remove query string
   const pathParts = pathAfterPrefix.split('/').filter(Boolean)
-  
+
   const collectionName = pathParts[0]
   const id = pathParts[1]
 
@@ -64,10 +64,10 @@ export default defineEventHandler(async (event) => {
         }
 
       case 'POST':
-        {
-          const createData = await readBody(event)
-          return await crudService.create(createData)
-        }
+      {
+        const createData = await readBody(event)
+        return await crudService.create(createData)
+      }
 
       case 'PUT':
       case 'PATCH':

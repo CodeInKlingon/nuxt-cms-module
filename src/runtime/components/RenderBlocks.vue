@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-4">
     <Component
+      :is="resolveBlockComponent(block.type)"
       v-for="block in blocks"
       :key="block.id"
-      :is="resolveBlockComponent(block.type)"
       v-bind="block.data"
     />
   </div>

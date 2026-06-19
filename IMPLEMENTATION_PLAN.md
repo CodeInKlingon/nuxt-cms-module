@@ -989,7 +989,7 @@ Will be implemented after core system is working. Includes:
 ### 1. Install Dependencies
 
 ```bash
-npm install drizzle-orm zod pathe
+npm install drizzle-orm zod pathe @libsql/client
 npm install -D drizzle-kit
 ```
 
@@ -997,15 +997,15 @@ npm install -D drizzle-kit
 
 ```typescript
 // nuxt.config.ts
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import Database from 'better-sqlite3'
+import { createClient } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
 
-const sqlite = new Database('cms.db')
-const db = drizzle(sqlite)
+const client = createClient({ url: process.env.DATABASE_URL || 'file:cms.db' })
+const db = drizzle(client)
 
 export default defineNuxtConfig({
   modules: ['nuxt-cms'],
-  
+
   cms: {
     collections: {
       products: './cms/products.ts',

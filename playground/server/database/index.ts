@@ -1,35 +1,27 @@
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { createClient } from '@libsql/client'
+import { drizzle } from 'drizzle-orm/libsql'
+
 import * as schema from './schema'
 
-const sqlite = new Database('./playground.db')
+export { schema }
 
-// Run migrations
-function migrate() {
-  console.log('Running database migrations...')
+const cwd = process.cwd()
 
-  // Check if blocks column exists in pages table
-  const tableInfo = sqlite.prepare('PRAGMA table_info(pages)').all() as Array<{ name: string }>
-  const hasBlocksColumn = tableInfo.some(col => col.name === 'blocks')
+// Resolve migrations folder relative to cwd (works when started from root or playground/)
+export const migrationsFolder = existsSync(join(cwd, 'server/database/migrations/meta/_journal.json'))
+  ? join(cwd, 'server/database/migrations')
+  : join(cwd, 'playground/server/database/migrations')
 
-  if (!hasBlocksColumn) {
-    console.log('Adding blocks column to pages table...')
-    sqlite.exec(`
-      ALTER TABLE pages ADD COLUMN blocks TEXT DEFAULT '[]';
-    `)
-    console.log('Blocks column added successfully!')
-  }
-  else {
-    console.log('Blocks column already exists, skipping migration.')
-  }
+// Resolve db path relative to cwd
+const dbPath = cwd.endsWith('playground') || cwd.includes('playground')
+  ? join(cwd, 'playground.db')
+  : join(cwd, 'playground/playground.db')
 
-  console.log('Migrations complete!')
-}
-
-// Run migrations
-migrate()
+export const client = createClient({ url: `file:${dbPath}` })
 
 // Create drizzle instance
-const db = drizzle(sqlite, { schema })
+export const db = drizzle(client, { schema })
 
 export default db
