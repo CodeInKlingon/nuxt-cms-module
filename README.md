@@ -72,7 +72,7 @@ export default defineNitroPlugin(() => {
 4. Create your first collection (`cms/products.ts`):
 
 ```ts
-import { defineCollection } from '../../src/runtime/composables/defineCollection'
+import { defineCollection } from 'nuxt-cms/runtime/composables/defineCollection'
 import { products } from '~/server/database/schema'
 
 export default defineCollection({
@@ -273,7 +273,7 @@ You can register custom pages inside the CMS admin panel. This is useful for scr
 1. Create a page definition file (`cms/pages/media.ts`):
 
 ```ts
-import { defineCustomPage } from '#cms'
+import { defineCustomPage } from 'nuxt-cms/runtime/composables/defineCustomPage'
 
 export default defineCustomPage({
   name: 'media',
@@ -347,32 +347,78 @@ Complete module options:
 
 ## Development
 
+This is a Turborepo monorepo with the module package at `packages/nuxt-module/` and the playground at `apps/playground/`.
+
 <details>
-  <summary>Local development</summary>
+  <summary>Setup</summary>
 
   ```bash
-  # Install dependencies
+  # Install dependencies (from root)
   npm install
 
-  # Generate type stubs
+  # Generate type stubs and prepare the module
   npm run dev:prepare
+  ```
 
-  # Develop with the playground
+</details>
+
+<details>
+  <summary>Dev workflow</summary>
+
+  The `npm run dev` command uses Turborepo to build the module first, then start the playground dev server:
+
+  ```bash
+  # Build module + start playground dev server
   npm run dev
 
-  # Build the playground
+  # Build playground for production (builds module first)
   npm run dev:build
+  ```
 
-  # Run ESLint
+  > **Windows note**: turbo 2.9.18 has a regression where spawned npm child processes produce no output and silently exit with code 1. Pin turbo to `^2.3.0` if you encounter this.
+
+</details>
+
+<details>
+  <summary>Lint & Test</summary>
+
+  ```bash
+  # Run ESLint across all packages
   npm run lint
 
   # Run Vitest
   npm run test
-  npm run test:watch
 
-  # Release new version
-  npm run release
+  # Watch mode
+  npm run test:watch
   ```
+
+</details>
+
+<details>
+  <summary>Import conventions</summary>
+
+  Import module runtime utilities using subpath exports. Do **not** import from the module entry point or via relative paths to source:
+
+  ```ts
+  // ✅ Correct — uses package.json exports
+  import { defineCollection } from 'nuxt-cms/runtime/composables/defineCollection'
+  import { defineCustomPage } from 'nuxt-cms/runtime/composables/defineCustomPage'
+  import { defineWidget } from 'nuxt-cms/runtime/composables/defineWidget'
+  import type { CollectionDefinition } from 'nuxt-cms/runtime/types'
+  import type { WidgetDefinition } from 'nuxt-cms/runtime/types/widgets'
+
+  // ❌ Incorrect — direct module entry
+  import { defineCollection } from 'nuxt-cms'
+
+  // ❌ Incorrect — relative path to source (will break after build)
+  import { defineCollection } from '../../src/runtime/composables/defineCollection'
+
+  // ❌ Incorrect — #cms is type-only (no runtime virtual module)
+  import { defineCustomPage } from '#cms'
+  ```
+
+  This is required because Nuxt 4's `impound` plugin blocks direct module entry-point imports during bundling, and relative source paths break after the module is published.
 
 </details>
 
