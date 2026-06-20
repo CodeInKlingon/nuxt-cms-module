@@ -64,7 +64,7 @@ export default defineCollection({
               label: 'File Path',
               widget: 'file-picker',
               props: {
-                accept: 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                accept: 'application/*',
                 maxSize: 5 * 1024 * 1024,
               },
             },

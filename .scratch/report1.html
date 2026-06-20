@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuxt CMS Module - Architecture Review</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        .badge-strong {
+            background: #ef4444;
+            color: white;
+        }
+        .badge-worth {
+            background: #f59e0b;
+            color: white;
+        }
+        .badge-speculative {
+            background: #10b981;
+            color: white;
+        }
+        .mermaid-container {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .problem-highlight {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 12px;
+            margin: 8px 0;
+        }
+        .solution-highlight {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            padding: 12px;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-white mb-4">Nuxt CMS Module Architecture Review</h1>
+            <p class="text-xl text-white/90">Architectural Friction Analysis & Deepening Opportunities</p>
+            <div class="mt-4 text-sm text-white/80">
+                Generated: 2026-06-19 | Version: 1.0
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            
+            <!-- defineWidget.ts -->
+            <div class="card p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">defineWidget.ts</h2>
+                    <span class="badge badge-strong">Strong</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">📁 Files</h3>
+                    <p class="text-sm text-gray-600">src/runtime/composables/defineWidget.ts</p>
+                </div>
+                
+                <div class="problem-highlight">
+                    <h3 class="font-semibold text-red-800 mb-2">⚠️ Problem</h3>
+                    <p class="text-sm text-red-700">
+                        Concentrates widget registration, validation building, field function creation, and type inference in a single interface.
+                        Global registry creates single point of failure and testing bottlenecks.
+                    </p>
+                </div>
+                
+                <div class="solution-highlight">
+                    <h3 class="font-semibold text-green-800 mb-2">💡 Solution</h3>
+                    <p class="text-sm text-green-700">
+                        Split into separate services: WidgetRegistry (seam for discovery), ValidationStrategy (adapter for validation),
+                        FieldBuilder (interface for field creation), and TypeInference (implementation detail). Use dependency injection
+                        instead of global registry pattern.
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">✅ Benefits</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Clear seams between concerns (adapter separation)</li>
+                        <li>• Better locality - validation logic isolated</li>
+                        <li>• Improved testability through dependency injection</li>
+                        <li>• Leverage through focused interfaces</li>
+                    </ul>
+                </div>
+                
+                <div class="mermaid-container">
+                    <h3 class="font-semibold text-gray-700 mb-3">📊 Before/After Visualization</h3>
+                    <div class="mermaid">
+                        graph TD
+                            A[defineWidget.ts] --> B[WidgetRegistry]
+                            A --> C[ValidationStrategy]
+                            A --> D[FieldBuilder]
+                            A --> E[TypeInference]
+                            
+                            B --> F[Global Registry]
+                            C --> G[Validation Rules]
+                            D --> H[Vue Prop Definitions]
+                            E --> I[Type Defaults]
+                            
+                            style A fill:#fef2f2,stroke:#ef4444,stroke-width:2px
+                            style B fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style C fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style D fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style E fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                    </div>
+                </div>
+            </div>
+            
+            <!-- crud.ts -->
+            <div class="card p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">crud.ts</h2>
+                    <span class="badge badge-strong">Strong</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">📁 Files</h3>
+                    <p class="text-sm text-gray-600">src/runtime/server/services/crud.ts</p>
+                </div>
+                
+                <div class="problem-highlight">
+                    <h3 class="font-semibold text-red-800 mb-2">⚠️ Problem</h3>
+                    <p class="text-sm text-red-700">
+                        CrudService class mixes database operations, business logic, validation orchestration, and hooks.
+                        Interface depth issues across multiple CRUD methods.
+                    </p>
+                </div>
+                
+                <div class="solution-highlight">
+                    <h3 class="font-semibold text-green-800 mb-2">💡 Solution</h3>
+                    <p class="text-sm text-green-700">
+                        Extract repository pattern: CollectionRepository (adapter for data access),
+                        ValidationOrchestrator (seam for validation), BusinessRules (interface for CRUD logic),
+                        and HookExecutor (implementation detail). Inject dependencies instead of mixed concerns.
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">✅ Benefits</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Clear separation of concerns (interface vs implementation)</li>
+                        <li>• Better locality - data access isolated from business logic</li>
+                        <li>• Improved testability through dependency injection</li>
+                        <li>• Leverage through focused CRUD operations</li>
+                    </ul>
+                </div>
+                
+                <div class="mermaid-container">
+                    <h3 class="font-semibold text-gray-700 mb-3">📊 Before/After Visualization</h3>
+                    <div class="mermaid">
+                        graph LR
+                            A[CrudService] --> B[CollectionRepository]
+                            A --> C[ValidationOrchestrator]
+                            A --> D[BusinessRules]
+                            A --> E[HookExecutor]
+                            
+                            B --> F[Database Operations]
+                            C --> G[Validation Logic]
+                            D --> H[CRUD Methods]
+                            E --> I[Hook Execution]
+                            
+                            style A fill:#fef2f2,stroke:#ef4444,stroke-width:2px
+                            style B fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style C fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style D fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style E fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                    </div>
+                </div>
+            </div>
+            
+            <!-- validation.ts -->
+            <div class="card p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">validation.ts</h2>
+                    <span class="badge badge-worth">Worth exploring</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">📁 Files</h3>
+                    <p class="text-sm text-gray-600">src/runtime/server/services/validation.ts</p>
+                </div>
+                
+                <div class="problem-highlight">
+                    <h3 class="font-semibold text-red-800 mb-2">⚠️ Problem</h3>
+                    <p class="text-sm text-red-700">
+                        `validateAndCoerce` integrates with Drizzle schema generation, validation rules, date coercion,
+                        AND custom hooks - interface depth with mixed responsibilities. Split validation approaches
+                        create unclear boundaries.
+                    </p>
+                </div>
+                
+                <div class="solution-highlight">
+                    <h3 class="font-semibold text-green-800 mb-2">💡 Solution</h3>
+                    <p class="text-sm text-green-700">
+                        Strategy pattern: SchemaValidator (adapter for schema generation), RuleValidator (interface for field rules),
+                        CoercionEngine (implementation detail), and HookAdapter (seam for custom hooks). Each validator can be
+                        composed based on collection configuration.
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">✅ Benefits</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Clear validation strategy separation (interface vs implementation)</li>
+                        <li>• Better locality - each validation aspect isolated</li>
+                        <li>• Improved testability through strategy composition</li>
+                        <li>• Leverage through pluggable validation approaches</li>
+                    </ul>
+                </div>
+                
+                <div class="mermaid-container">
+                    <h3 class="font-semibold text-gray-700 mb-3">📊 Before/After Visualization</h3>
+                    <div class="mermaid">
+                        graph TD
+                            A[ValidationOrchestrator] --> B[SchemaValidator]
+                            A --> C[RuleValidator]
+                            A --> D[CoercionEngine]
+                            A --> E[HookAdapter]
+                            
+                            B --> F[Schema Generation]
+                            C --> G[Field Rules]
+                            D --> H[Date Coercion]
+                            E --> I[Custom Hooks]
+                            
+                            style A fill:#fef2f2,stroke:#ef4444,stroke-width:2px
+                            style B fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style C fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style D fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style E fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                    </div>
+                </div>
+            </div>
+            
+            <!-- relations.ts -->
+            <div class="card p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">relations.ts</h2>
+                    <span class="badge badge-speculative">Speculative</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">📁 Files</h3>
+                    <p class="text-sm text-gray-800">src/runtime/server/services/relations.ts</p>
+                </div>
+                
+                <div class="problem-highlight">
+                    <h3 class="font-semibold text-red-800 mb-2">⚠️ Problem</h3>
+                    <p class="text-sm text-red-700">
+                        Single module handles configuration validation, payload extraction, and persistence for
+                        three storage types (inline, inverse, junction). Storage type entanglement makes
+                        them hard to extend and test.
+                    </p>
+                </div>
+                
+                <div class="solution-highlight">
+                    <h3 class="font-semibold text-green-800 mb-2">💡 Solution</h3>
+                    <p class="text-sm text-green-700">
+                        Extract storage adapter pattern: RelationValidator (interface for validation),
+                        PayloadExtractor (seam for extraction), RelationRepository (adapter for persistence).
+                        Each storage type can have its own adapter implementation.
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">✅ Benefits</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Clear storage abstraction (adapter pattern)</li>
+                        <li>• Better locality - validation separated from persistence</li>
+                        <li>• Improved testability through adapter injection</li>
+                        <li>• Leverage through pluggable storage strategies</li>
+                    </ul>
+                </div>
+                
+                <div class="mermaid-container">
+                    <h3 class="font-semibold text-gray-800 mb-3">📊 Before/After Visualization</h3>
+                    <div class="mermaid">
+                        graph LR
+                            A[RelationOrchestrator] --> B[RelationValidator]
+                            A --> C[PayloadExtractor]
+                            A --> D[RelationRepository]
+                            
+                            B --> F[Configuration Validation]
+                            C --> G[Payload Processing]
+                            D --> H[Storage Persistence]
+                            
+                            style A fill:#fef2f2,stroke:#ef4444,stroke-width:2px
+                            style B fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style C fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style D fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                    </div>
+                </div>
+            </div>
+            
+            <!-- module.ts -->
+            <div class="card p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Virtual Module Generation</h2>
+                    <span class="badge badge-worth">Worth exploring</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">📁 Files</h3>
+                    <p class="text-sm text-gray-600">src/module.ts</p>
+                </div>
+                
+                <div class="problem-highlight">
+                    <h3 class="font-semibold text-red-800 mb-2">⚠️ Problem</h3>
+                    <p class="text-sm text-red-700">
+                        Virtual module generation mixes configuration processing with template generation.
+                        `setupWidgets`, `setupBlockComponents`, and collection generation all in same file.
+                        Adapter complexity - multiple virtual module types in single module file.
+                    </p>
+                </div>
+                
+                <div class="solution-highlight">
+                    <h3 class="font-semibold text-green-800 mb-2">💡 Solution</h3>
+                    <p class="text-sm text-green-700">
+                        Extract ModuleGenerator pattern: TemplateEngine (interface for template generation),
+                        ConfigProcessor (seam for configuration), and ModuleBuilder (adapter for assembly).
+                        Separate concerns for each virtual module type.
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">✅ Benefits</h3>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Clear generation abstraction (adapter pattern)</li>
+                        <li>• Better locality - processing separated from generation</li>
+                        <li>• Improved testability through dependency injection</li>
+                        <li>• Leverage through specialized generators</li>
+                    </ul>
+                </div>
+                
+                <div class="mermaid-container">
+                    <h3 class="font-semibold text-gray-800 mb-3">📊 Before/After Visualization</h3>
+                    <div class="mermaid">
+                        graph TD
+                            A[ModuleOrchestrator] --> B[TemplateEngine]
+                            A --> C[ConfigProcessor]
+                            A --> D[ModuleBuilder]
+                            
+                            B --> F[Template Generation]
+                            C --> G[Configuration Processing]
+                            D --> H[Module Assembly]
+                            
+                            style A fill:#fef2f2,stroke:#ef4444,stroke-width:2px
+                            style B fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style C fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                            style D fill:#f0fdf4,stroke:#22c55e,stroke-width:2px
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-8 mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">🏆 Top Recommendation</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Recommended Priority: defineWidget.ts</h3>
+                    <p class="text-gray-600 mb-4">
+                        This is the <strong>most problematic module</strong> with clear architectural friction points. It breaks the deletion test
+                        by concentrating excessive complexity in a single interface.
+                    </p>
+                    <p class="text-gray-600 mb-4">
+                        <strong>Domain Context:</strong> The widget system is foundational to the Collection dashboard
+                        configuration - every field in every collection relies on widgets for UI representation and validation.
+                    </p>
+                    <p class="text-gray-600">
+                        <strong>Architecture Impact:</strong> Resolving this will establish patterns for other service modules,
+                        improving overall codebase depth and testability.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Why This First</h3>
+                    <ul class="space-y-3 text-gray-600">
+                        <li>• <strong>High Impact:</strong> All CRUD operations rely on widgets for field rendering</li>
+                        <li>• <strong>Clear Seams:</strong> Separation between registration, validation, and field building</li>
+                        <li>• <strong>Low Risk:</strong> Pure functions, clear interfaces, minimal coupling</li>
+                        <li>• <strong>High Leverage:</strong> One change benefits all collection definitions</li>
+                        <li>• <strong>Foundation:</strong> Establishes patterns for other deep modules</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="text-center text-white/80 text-sm">
+            <p>Nuxt CMS Module - Architecture Review | Designed with ❤️ for deep, testable modules</p>
+            <p class="mt-2">© 2026 - All architectural recommendations based on codebase analysis</p>
+        </footer>
+    </div>
+    
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#f0fdf4',
+                primaryBorderColor: '#22c55e',
+                primaryTextColor: '#166534',
+                secondaryColor: '#fef2f2',
+                secondaryBorderColor: '#ef4444',
+                secondaryTextColor: '#991b1b',
+                tertiaryColor: '#fffbeb',
+                tertiaryBorderColor: '#f59e0b',
+                tertiaryTextColor: '#92400e',
+            }
+        });
+    </script>
+</body>
+</html>
