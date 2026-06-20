@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
-import * as schema from '../../playground/server/database/schema'
+import * as schema from '../../my-turborepo/apps/playground/server/database/schema'
 
 /**
  * Create an isolated SQLite database on disk for tests.

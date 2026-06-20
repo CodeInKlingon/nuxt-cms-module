@@ -1,0 +1,135 @@
+
+import { defineCollection } from 'nuxt-cms/runtime/composables/defineCollection'
+import { pages } from '../../server/database/schema'
+
+export default defineCollection({
+  name: 'pages',
+  schema: pages,
+  options: {
+    label: 'Pages',
+    icon: 'i-lucide-file-text',
+    sortable: true,
+    searchable: false,
+    description: 'Generic webpages with block content',
+    public: true,
+  },
+
+  blocks: {
+    enabled: true,
+    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageBlock', 'FeatureCard'],
+    fieldName: 'blocks',
+  },
+
+  dashboard: {
+    list: {
+      columns: [
+        { field: 'title', label: 'Page Title', sortable: true, cell: { type: 'text', truncate: 40 } },
+        { field: 'slug', label: 'Slug', cell: { type: 'link', href: '/{slug}', external: true } },
+        {
+          field: 'published',
+          label: 'Status',
+          cell: {
+            type: 'badge',
+            color: { true: 'success', false: 'neutral' },
+            label: { true: 'Published', false: 'Draft' },
+          },
+        },
+      ],
+    },
+
+    form: {
+      tabs: [
+        {
+          label: 'Page Details',
+          icon: 'i-lucide-info',
+          sections: [
+            {
+              label: 'Basic Info',
+              fields: [
+                {
+                  field: 'title',
+                  label: 'Page Title',
+                  widget: 'text',
+                  required: true,
+                  validation: [
+                    { type: 'min', value: 3 },
+                    { type: 'max', value: 200 },
+                  ],
+                },
+                {
+                  field: 'slug',
+                  label: 'URL Slug',
+                  widget: 'text',
+                  required: true,
+                  description: 'Lowercase letters, numbers, hyphens, and slashes.',
+                  validation: [
+                    { type: 'pattern', value: /^[a-z0-9-/]+$/, message: 'Only lowercase letters, numbers, hyphens, and slashes' },
+                  ],
+                },
+                {
+                  field: 'published',
+                  label: 'Published',
+                  widget: 'boolean',
+                  defaultValue: false,
+                },
+                {
+                  field: 'products',
+                  label: 'Related Products',
+                  widget: 'relation',
+                  relation: {
+                    type: 'many',
+                    collection: 'products',
+                    storage: 'junction',
+                    junctionTable: 'productsToPages',
+                    sourceJunctionColumn: 'pageId',
+                    targetJunctionColumn: 'productId',
+                    sortable: true,
+                    orderColumn: 'order',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Content',
+          icon: 'i-lucide-layout',
+          sections: [
+            {
+              label: 'Page Content',
+              fields: [
+                {
+                  field: 'content',
+                  label: 'Legacy Content',
+                  widget: 'textarea',
+                  description: 'This is the old content field. Use Blocks below for new content.',
+                },
+                {
+                  field: 'blocks',
+                  label: 'Block Content',
+                  widget: 'blocks',
+                  props: {
+                    allowedBlocks: ['HeroSection', 'TextBlock', 'ImageBlock', 'FeatureCard'],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  hooks: {
+    beforeCreate: async (data) => {
+      // Auto-generate slug from title if not provided
+      if (!data.slug && data.title) {
+        data.slug = data.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '')
+      }
+      return data
+    },
+  },
+})

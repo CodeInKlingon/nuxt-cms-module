@@ -1,85 +1,26 @@
 {
-  "name": "nuxt-cms",
-  "version": "1.0.0",
-  "description": "A powerful CMS module for Nuxt with Drizzle ORM integration",
-  "repository": "your-org/nuxt-cms",
-  "license": "MIT",
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/types.d.mts",
-      "import": "./dist/module.mjs"
-    }
-  },
-  "main": "./dist/module.mjs",
-  "typesVersions": {
-    "*": {
-      ".": [
-        "./dist/types.d.mts"
-      ]
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "workspaces": [
-    "playground"
-  ],
+  "name": "my-turborepo",
+  "private": true,
   "scripts": {
-    "prepack": "nuxt-module-build build",
-    "dev": "npm run dev:prepare && nuxt dev playground --host",
-    "dev:build": "nuxt build playground",
-    "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxt prepare playground",
-    "release": "npm run lint && npm run test && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
-    "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest watch",
-    "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit"
-  },
-  "dependencies": {
-    "@nuxt/kit": "^4.4.2",
-    "@tanstack/vue-query": "^5.101.0",
-    "drizzle-orm": ">=0.38.0",
-    "drizzle-zod": "^0.8.0",
-    "pathe": "^1.1.2",
-    "tailwindcss": "^4.2.2",
-    "ufo": "^1.5.4",
-    "zod": "^3.25.0"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:prepare": "turbo run dev:prepare",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "@iconify-json/lucide": "^1.2.101",
-    "@nuxt/devtools": "^3.2.4",
-    "@nuxt/eslint-config": "^1.15.2",
-    "@nuxt/icon": "^2.2.1",
-    "@nuxt/module-builder": "^1.0.2",
-    "@nuxt/schema": "^4.4.2",
-    "@nuxt/test-utils": "^4.0.0",
-    "@nuxt/ui": "^4.6.0",
-    "@types/node": "latest",
-    "changelogen": "^0.6.2",
-    "drizzle-kit": "^0.31.2",
-    "eslint": "^10.1.0",
-    "nuxt": "^4.4.2",
-    "nuxt-auth-utils": "^0.5.29",
-    "typescript": "~5.9.3",
-    "vitest": "^4.1.1",
-    "vue-tsc": "^3.2.6"
+    "prettier": "^3.7.4",
+    "turbo": "^2.3.0",
+    "typescript": "5.9.2"
   },
-  "peerDependencies": {
-    "@nuxt/icon": "^2.0.0",
-    "@nuxt/ui": "^4.0.0",
-    "drizzle-orm": ">=0.38.0",
-    "nuxt-auth-utils": "^0.5.29"
+  "engines": {
+    "node": ">=18"
   },
-  "peerDependenciesMeta": {
-    "@nuxt/icon": {
-      "optional": true
-    },
-    "@nuxt/ui": {
-      "optional": true
-    },
-    "nuxt-auth-utils": {
-      "optional": true
-    }
-  }
+  "packageManager": "npm@11.13.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
