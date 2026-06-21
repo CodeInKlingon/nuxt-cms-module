@@ -1,5 +1,7 @@
 
 - [x] login ui shows password error (red outline on input) on initial load
+- [ ] form error field highlighting
+- [ ] form builder component (short hand syntax so user doesn't have to define ui)
 - [x] collection search
 - [x] sortable columns
 - [x] colection filtering
