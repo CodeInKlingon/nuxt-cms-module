@@ -25,7 +25,7 @@ A powerful, type-safe CMS module for Nuxt with Drizzle ORM integration. Build co
 1. Install the module dependencies:
 
 ```bash
-npm install nuxt-cms drizzle-orm @nuxt/ui @nuxt/icon
+npm install @codeinklingon/nuxt-cms drizzle-orm @nuxt/ui @nuxt/icon
 ```
 
 2. Add the modules to your `nuxt.config.ts`:
@@ -35,7 +35,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
     '@nuxt/icon',
-    'nuxt-cms',
+    '@codeinklingon/nuxt-cms',
   ],
 
   cms: {
@@ -57,7 +57,7 @@ export default defineNuxtConfig({
 3. Create a server plugin to provide the database connection (`server/plugins/cms-database.ts`):
 
 ```ts
-import { setDrizzleConnection } from 'nuxt-cms/server'
+import { setDrizzleConnection } from '@codeinklingon/nuxt-cms/server'
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 
@@ -72,7 +72,7 @@ export default defineNitroPlugin(() => {
 4. Create your first collection (`cms/products.ts`):
 
 ```ts
-import { defineCollection } from 'nuxt-cms/runtime/composables/defineCollection'
+import { defineCollection } from '@codeinklingon/nuxt-cms/runtime/composables/defineCollection'
 import { products } from '~/server/database/schema'
 
 export default defineCollection({
@@ -273,7 +273,7 @@ You can register custom pages inside the CMS admin panel. This is useful for scr
 1. Create a page definition file (`cms/pages/media.ts`):
 
 ```ts
-import { defineCustomPage } from 'nuxt-cms/runtime/composables/defineCustomPage'
+import { defineCustomPage } from '@codeinklingon/nuxt-cms/runtime/composables/defineCustomPage'
 
 export default defineCustomPage({
   name: 'media',
@@ -402,14 +402,14 @@ This is a Turborepo monorepo with the module package at `packages/nuxt-module/` 
 
   ```ts
   // ✅ Correct — uses package.json exports
-  import { defineCollection } from 'nuxt-cms/runtime/composables/defineCollection'
-  import { defineCustomPage } from 'nuxt-cms/runtime/composables/defineCustomPage'
-  import { defineWidget } from 'nuxt-cms/runtime/composables/defineWidget'
-  import type { CollectionDefinition } from 'nuxt-cms/runtime/types'
-  import type { WidgetDefinition } from 'nuxt-cms/runtime/types/widgets'
+  import { defineCollection } from '@codeinklingon/nuxt-cms/runtime/composables/defineCollection'
+  import { defineCustomPage } from '@codeinklingon/nuxt-cms/runtime/composables/defineCustomPage'
+  import { defineWidget } from '@codeinklingon/nuxt-cms/runtime/composables/defineWidget'
+  import type { CollectionDefinition } from '@codeinklingon/nuxt-cms/runtime/types'
+  import type { WidgetDefinition } from '@codeinklingon/nuxt-cms/runtime/types/widgets'
 
   // ❌ Incorrect — direct module entry
-  import { defineCollection } from 'nuxt-cms'
+  import { defineCollection } from '@codeinklingon/nuxt-cms'
 
   // ❌ Incorrect — relative path to source (will break after build)
   import { defineCollection } from '../../src/runtime/composables/defineCollection'
@@ -444,14 +444,14 @@ Contributions are welcome! Please read the [implementation plan](./IMPLEMENTATIO
 MIT
 
 <!-- Badges -->
-[npm-version-src]: https://img.shields.io/npm/v/nuxt-cms/latest.svg?style=flat&colorA=020420&colorB=00DC82
-[npm-version-href]: https://npmjs.com/package/nuxt-cms
+[npm-version-src]: https://img.shields.io/npm/v/@codeinklingon/nuxt-cms/latest.svg?style=flat&colorA=020420&colorB=00DC82
+[npm-version-href]: https://npmjs.com/package/@codeinklingon/nuxt-cms
 
-[npm-downloads-src]: https://img.shields.io/npm/dm/nuxt-cms.svg?style=flat&colorA=020420&colorB=00DC82
-[npm-downloads-href]: https://npm.chart.dev/nuxt-cms
+[npm-downloads-src]: https://img.shields.io/npm/dm/@codeinklingon/nuxt-cms.svg?style=flat&colorA=020420&colorB=00DC82
+[npm-downloads-href]: https://npm.chart.dev/@codeinklingon/nuxt-cms
 
-[license-src]: https://img.shields.io/npm/l/nuxt-cms.svg?style=flat&colorA=020420&colorB=00DC82
-[license-href]: https://npmjs.com/package/nuxt-cms
+[license-src]: https://img.shields.io/npm/l/@codeinklingon/nuxt-cms.svg?style=flat&colorA=020420&colorB=00DC82
+[license-href]: https://npmjs.com/package/@codeinklingon/nuxt-cms
 
 [nuxt-src]: https://img.shields.io/badge/Nuxt-020420?logo=nuxt
 [nuxt-href]: https://nuxt.com

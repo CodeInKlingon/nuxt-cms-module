@@ -1,8 +1,8 @@
 {
-  "name": "nuxt-cms",
+  "name": "@codeinklingon/nuxt-cms",
   "version": "1.0.0",
   "description": "A powerful CMS module for Nuxt with Drizzle ORM integration",
-  "repository": "your-org/nuxt-cms",
+  "repository": "CodeInKlingon/nuxt-cms",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -30,7 +30,7 @@
     "build": "nuxt-module-build build",
     "prepack": "npm run build",
     "dev:build": "nuxt build ../../apps/playground",
-    "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxt prepare ../../apps/playground",
+    "dev:prepare": "nuxt-module-build build && nuxt-module-build prepare && nuxt prepare ../../apps/playground",
     "release": "npm run lint && npm run test && npm run prepack && changelogen --release && npm publish && git push --follow-tags",
     "lint": "eslint .",
     "test": "vitest run",

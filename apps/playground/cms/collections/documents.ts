@@ -1,5 +1,5 @@
 
-import { defineCollection } from 'nuxt-cms/runtime/composables/defineCollection'
+import { defineCollection } from '@codeinklingon/nuxt-cms/runtime/composables/defineCollection'
 import { medias } from '../../server/database/schema'
 
 export default defineCollection({

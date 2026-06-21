@@ -1,5 +1,5 @@
-import { defineWidget } from 'nuxt-cms/runtime/composables/defineWidget'
-import type { TextOptions } from 'nuxt-cms/runtime/types/widgets'
+import { defineWidget } from '@codeinklingon/nuxt-cms/runtime/composables/defineWidget'
+import type { TextOptions } from '@codeinklingon/nuxt-cms/runtime/types/widgets'
 
 export const fileUploadWidget = defineWidget<string, TextOptions>({
   name: 'file-upload',

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { H3Event } from 'h3'
 import { eq, like, or, and, asc, desc, inArray } from 'drizzle-orm'
 import type { CollectionDefinition, CrudContext, PaginatedResult, QueryOptions } from '../../types'
@@ -373,13 +375,13 @@ export class CrudService {
         return value.toLowerCase() === 'true' ? 1 : 0
       }
       const num = Number.parseInt(value, 10)
-      return isNaN(num) ? value : num
+      return Number.isNaN(num) ? value : num
     }
 
     // Real/Float fields
     if (columnType === 'real' || columnType === 'float' || columnType === 'double' || columnType === 'decimal') {
       const num = Number.parseFloat(value)
-      return isNaN(num) ? value : num
+      return Number.isNaN(num) ? value : num
     }
 
     return value

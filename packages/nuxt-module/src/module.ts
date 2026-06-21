@@ -89,7 +89,7 @@ export interface ModuleOptions {
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
-    name: 'nuxt-cms',
+    name: '@codeinklingon/nuxt-cms',
     configKey: 'cms',
     compatibility: {
       nuxt: '>=4.0.0',
@@ -141,7 +141,7 @@ export default defineNuxtModule<ModuleOptions>({
 
   async setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
-    const logger = useLogger('nuxt-cms')
+    const logger = useLogger('@codeinklingon/nuxt-cms')
     nuxt.options.css.push(resolver.resolve('./runtime/style.css'))
 
     // Register nuxt-auth-utils server functions as Nitro auto-imports for this module's
@@ -186,7 +186,7 @@ export const collections = [${colArray}]`,
     }
     else {
       logger.warn(
-        'No `database` path configured for nuxt-cms. '
+        'No `database` path configured for @codeinklingon/nuxt-cms. '
         + 'The CMS API will not function until a Drizzle db connection is provided. '
         + 'Add `cms.database` to your nuxt.config.ts pointing to a file with a default export of your Drizzle db instance.',
       )

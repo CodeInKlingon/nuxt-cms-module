@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { CollectionDefinition } from '../../types'
 
 let dbInstance: any = null

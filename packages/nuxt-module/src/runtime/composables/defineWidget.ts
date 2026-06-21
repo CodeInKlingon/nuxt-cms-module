@@ -14,7 +14,7 @@ declare global {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function defineWidget<TValue = any, TOptions extends Record<string, any> = Record<string, any>>(
   definition: WidgetDefinitionOptions<TValue, TOptions>,
-): FieldFunction<TValue, TOptions> {
+): FieldFunction<TOptions> {
   // Register widget globally (will be collected by module at build time)
   if (typeof globalThis !== 'undefined') {
     const registry = (globalThis.__CMS_WIDGET_REGISTRY__ ||= new Map())
@@ -22,7 +22,7 @@ export function defineWidget<TValue = any, TOptions extends Record<string, any> 
   }
 
   // Return field function
-  return (options?: TOptions): VuePropDefinition<TValue, TOptions> => {
+  return (options?: TOptions): VuePropDefinition<TOptions> => {
     const mergedOptions = {
       ...definition.defaultOptions,
       ...options,

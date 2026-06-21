@@ -32,7 +32,7 @@ An image block with alt text, caption, and alignment options.
 ## Creating New Blocks
 
 1. Create a new `.vue` file in this directory
-2. Use field helper functions from `nuxt-cms` in `defineProps()`
+2. Use field helper functions from `@codeinklingon/nuxt-cms` in `defineProps()`
 3. Register the block in your collection's `allowedBlocks` array
 
 Example:

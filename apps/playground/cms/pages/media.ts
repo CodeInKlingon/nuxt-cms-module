@@ -1,6 +1,6 @@
 
 
-import { defineCustomPage } from 'nuxt-cms/runtime/composables/defineCustomPage'
+import { defineCustomPage } from '@codeinklingon/nuxt-cms/runtime/composables/defineCustomPage'
 
 export default defineCustomPage({
   name: 'media',

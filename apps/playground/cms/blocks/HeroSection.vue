@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { textField, linkField } from 'nuxt-cms/runtime/widgets/built-ins'
+import { textField, linkField } from '@codeinklingon/nuxt-cms/runtime/widgets/built-ins'
 
 const props = defineProps({
   title: textField({

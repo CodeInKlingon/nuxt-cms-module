@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { defineEventHandler, getMethod, readBody, getQuery, createError } from 'h3'
-import { useRuntimeConfig } from '#imports'
 import { CrudService } from '../../services/crud'
 import { getCollectionDefinition } from '../../utils/drizzle-adapter'
-import type { CollectionDefinition } from '../../../types'
 
 export default defineEventHandler(async (event) => {
   // Parse the URL path to extract collection name and ID
@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
             order: query.order,
             search: query.search,
             filter: Object.keys(filter).length > 0 ? filter : undefined,
-          } as any)
+          })
         }
 
       case 'POST':
@@ -92,10 +92,11 @@ export default defineEventHandler(async (event) => {
         })
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
+    const err = error as { statusCode?: number, message?: string }
     throw createError({
-      statusCode: error.statusCode || 500,
-      message: error.message || 'Internal server error',
+      statusCode: err.statusCode || 500,
+      message: err.message || 'Internal server error',
     })
   }
 })

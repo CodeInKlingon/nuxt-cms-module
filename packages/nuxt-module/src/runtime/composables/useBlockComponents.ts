@@ -1,5 +1,7 @@
 import { ref, shallowRef } from 'vue'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Cache for loaded block components
 const blockCache = new Map<string, any>()
 
@@ -16,7 +18,7 @@ export async function loadBlockComponent(blockType: string): Promise<any> {
 
   try {
     // Import from the virtual module
-    // @ts-ignore - Virtual module
+    // @ts-expect-error - Virtual module
     const blocksModule = await import('#cms/blocks')
     const component = await blocksModule.loadBlockComponent(blockType)
 

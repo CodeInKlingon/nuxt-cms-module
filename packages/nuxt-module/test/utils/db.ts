@@ -12,7 +12,7 @@ import * as schema from './schema'
  * need additional playground tables.
  */
 export async function createTestDb() {
-  const dir = mkdtempSync(join(tmpdir(), 'nuxt-cms-test-'))
+  const dir = mkdtempSync(join(tmpdir(), 'cms-test-'))
   const dbPath = join(dir, 'test.db')
   const client = createClient({ url: `file:${dbPath}` })
   const db = drizzle(client, { schema })

@@ -15,7 +15,8 @@ watch(open, (isOpen) => {
   }
 })
 
-const modalContent = { style: { maxWidth: '1280px' } } as any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const modalContent: any = { style: { maxWidth: '1280px' } }
 
 const {
   collection,

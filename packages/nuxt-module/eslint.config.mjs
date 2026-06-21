@@ -16,5 +16,10 @@ export default createConfigForNuxt({
   },
 })
   .append(
-    // your custom flat config here...
   )
+  // Nuxt page files are auto-registered as components with single-word names — this is expected
+  .override('nuxt/vue/rules', {
+    rules: {
+      'vue/multi-word-component-names': 'off',
+    },
+  })

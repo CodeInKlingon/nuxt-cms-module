@@ -1,6 +1,6 @@
 # Playground Custom Widget - Random Boolean
 
-This is a demonstration of creating custom widgets for the nuxt-cms module.
+This is a demonstration of creating custom widgets for the @codeinklingon/nuxt-cms module.
 
 ## What It Does
 
@@ -60,8 +60,8 @@ function randomize() {
 
 ```typescript
 // cms/widgets/random-boolean.ts
-import { defineWidget } from 'nuxt-cms'
-import type { BooleanOptions } from 'nuxt-cms'
+import { defineWidget } from '@codeinklingon/nuxt-cms'
+import type { BooleanOptions } from '@codeinklingon/nuxt-cms'
 
 export const randomBooleanWidget = defineWidget<boolean, BooleanOptions>({
   name: 'random-boolean',
@@ -87,7 +87,7 @@ export const randomBooleanField = randomBooleanWidget
 import { randomBooleanWidget } from './cms/widgets/random-boolean'
 
 export default defineNuxtConfig({
-  modules: ['nuxt-cms'],
+  modules: ['@codeinklingon/nuxt-cms'],
   cms: {
     widgets: [
       randomBooleanWidget,

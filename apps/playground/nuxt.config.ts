@@ -6,7 +6,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/icon',
     'nuxt-auth-utils',
-    'nuxt-cms',
+    '@codeinklingon/nuxt-cms',
   ],
   devtools: { enabled: true },
   compatibilityDate: 'latest',

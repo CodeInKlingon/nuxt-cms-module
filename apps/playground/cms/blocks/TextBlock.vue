@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { textField, textareaField } from 'nuxt-cms/runtime/widgets/built-ins'
+import { textField, textareaField } from '@codeinklingon/nuxt-cms/runtime/widgets/built-ins'
 
 defineProps({
   heading: textField({

@@ -20,6 +20,7 @@ interface Props {
 defineProps<Props>()
 
 // Cache for resolved components
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const componentCache = new Map<string, any>()
 
 // Resolve block component

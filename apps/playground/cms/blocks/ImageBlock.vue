@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { textField, selectField } from 'nuxt-cms/runtime/widgets/built-ins'
+import { textField, selectField } from '@codeinklingon/nuxt-cms/runtime/widgets/built-ins'
 
 defineProps({
   imageUrl: textField({

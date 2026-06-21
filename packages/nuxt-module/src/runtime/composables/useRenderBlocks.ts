@@ -6,6 +6,8 @@ export interface RenderBlocksOptions {
   onBlockRender?: (block: BlockItem) => void
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Cache for resolved components
 const componentCache = new Map<string, any>()
 

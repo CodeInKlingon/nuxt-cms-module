@@ -20,14 +20,14 @@ export interface WidgetRegistryEntry {
 }
 
 // Field function returned by defineWidget
-export type FieldFunction<TValue, TOptions> = (
+export type FieldFunction<TOptions> = (
   options?: TOptions,
 
-) => VuePropDefinition<TValue, TOptions>
+) => VuePropDefinition<TOptions>
 
 // Vue prop definition with CMS metadata
 
-export interface VuePropDefinition<TValue, TOptions> {
+export interface VuePropDefinition<TOptions> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type: any
   required: boolean
@@ -53,10 +53,12 @@ export interface WidgetComponentEmits<T> {
 
 // Validation rule types
 export interface ValidationRule {
-  type: 'required' | 'minLength' | 'maxLength' | 'min' | 'max' | 'pattern' | 'email' | 'url' | 'custom'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value?: any
-  message?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fn?: (value: any) => boolean
+  message?: string
+  type: 'required' | 'minLength' | 'maxLength' | 'min' | 'max' | 'pattern' | 'email' | 'url' | 'custom'
 }
 
 // Base field options
@@ -125,13 +127,16 @@ export interface RelationOptions extends BaseFieldOptions {
   collection: string
   multiple?: boolean
   fields?: string[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filter?: Record<string, any>
 }
 
 // Repeater field options
 export interface RepeaterOptions extends BaseFieldOptions {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default?: any[]
-  fields: Record<string, VuePropDefinition<any, any>>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fields: Record<string, VuePropDefinition<any>>
   minItems?: number
   maxItems?: number
 }
@@ -151,6 +156,7 @@ export type BlockFieldType
 export interface BlockItem {
   id: string
   type: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>
   meta?: {
     createdAt: string

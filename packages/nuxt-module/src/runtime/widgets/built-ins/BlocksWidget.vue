@@ -16,7 +16,7 @@ interface Props {
 
 defineProps<Props>()
 
-const emit = defineEmits<{
+defineEmits<{
   'update:modelValue': [value: BlockItem[]]
 }>()
 </script>

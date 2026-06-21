@@ -1,5 +1,5 @@
-import { defineWidget } from 'nuxt-cms/runtime/composables/defineWidget'
-import type { BaseFieldOptions } from 'nuxt-cms/runtime/types/widgets'
+import { defineWidget } from '@codeinklingon/nuxt-cms/runtime/composables/defineWidget'
+import type { BaseFieldOptions } from '@codeinklingon/nuxt-cms/runtime/types/widgets'
 
 export interface FilePickerOptions extends BaseFieldOptions {
   default?: string

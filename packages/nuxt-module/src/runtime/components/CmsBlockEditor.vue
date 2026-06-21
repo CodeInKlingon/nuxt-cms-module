@@ -521,6 +521,7 @@ async function pasteBlock(afterIndex?: number) {
 }
 
 // Update a block field
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function updateBlockField(blockId: string, fieldName: string, value: any) {
   const newValue = blocks.value.map((block) => {
     if (block.id === blockId) {

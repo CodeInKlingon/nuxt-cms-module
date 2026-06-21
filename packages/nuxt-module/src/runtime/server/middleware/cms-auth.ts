@@ -10,6 +10,7 @@ import { getCollectionDefinition } from '../utils/drizzle-adapter'
  * - Otherwise requires a valid nuxt-auth-utils session
  */
 export default defineEventHandler(async (event) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const config = useRuntimeConfig(event) as any
   const path = event.path
   const apiPrefix = config.public?.cms?.api?.prefix || '/api/cms'

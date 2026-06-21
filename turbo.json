@@ -20,6 +20,10 @@
     "dev:prepare": {
       "cache": false
     },
+    "preview": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
     "prepack": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]

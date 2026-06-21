@@ -1,5 +1,5 @@
-import { defineWidget } from 'nuxt-cms/runtime/composables/defineWidget'
-import type { BooleanOptions } from 'nuxt-cms/runtime/types/widgets'
+import { defineWidget } from '@codeinklingon/nuxt-cms/runtime/composables/defineWidget'
+import type { BooleanOptions } from '@codeinklingon/nuxt-cms/runtime/types/widgets'
 
 export const randomBooleanWidget = defineWidget<boolean, BooleanOptions>({
   name: 'random-boolean',
