@@ -7,6 +7,7 @@
 - [X] test and verify collection pagination
 - [x] test & verify relation field
   - [x] relation selection definition
+  - [ ] test and verify relation reordering
 - [x] fix form view ui
 - [x] defineWidget()
 - [x] custom auth handling
@@ -23,4 +24,5 @@
 - [x] medias & downloads - can live in user space with custom pages and widgets
   - [ ] improve picker modal
 - [ ] Tailwind utilities not generated for components in `playground/cms/pages` (hotfixed with inline CSS in `playground/cms/pages/MediaLibrary.vue`; configure Tailwind content scanning to remove hotfix)
-- [ ] Two component files resolving to the same name warning
+- [x] Two component files resolving to the same name warning
+- [ ] loading collection page for id slug that doesn't exist shold display error page

@@ -3,7 +3,7 @@ import type { TextareaOptions } from '../../types/widgets'
 
 export const textareaWidget = defineWidget<string, TextareaOptions>({
   name: 'textarea',
-  component: () => import('./TextareaWidget.vue'),
+  component: '',
   propType: String,
   defaultOptions: {
     default: '',

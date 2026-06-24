@@ -8,7 +8,7 @@ export type RelationValue = string | number | Array<string | number>
 
 export const relationWidget = defineWidget<RelationValue, RelationOptions>({
   name: 'relation',
-  component: () => import('./RelationWidget.vue'),
+  component: '',
   propType: Object as unknown as PropTypeConstructor,
   validate: (value, options) => {
     if (options.required) {

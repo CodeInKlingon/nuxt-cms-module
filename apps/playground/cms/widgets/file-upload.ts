@@ -3,7 +3,7 @@ import type { TextOptions } from 'nuxt-cms/runtime/types/widgets'
 
 export const fileUploadWidget = defineWidget<string, TextOptions>({
   name: 'file-upload',
-  component: () => import('./FileUpload.vue'),
+  component: './cms/widgets/FileUpload.vue',
   defaultOptions: {
     default: '',
   },

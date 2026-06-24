@@ -3,7 +3,7 @@ import type { NumberOptions } from '../../types/widgets'
 
 export const numberWidget = defineWidget<number, NumberOptions>({
   name: 'number',
-  component: () => import('./NumberWidget.vue'),
+  component: '',
   propType: Number,
   defaultOptions: {
     default: 0,

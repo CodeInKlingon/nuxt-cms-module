@@ -22,7 +22,7 @@ export function defineWidget<TValue = any, TOptions extends Record<string, any> 
   }
 
   // Return field function
-  return (options?: TOptions): VuePropDefinition<TValue, TOptions> => {
+  const fieldFn: FieldFunction<TValue, TOptions> = (options?: TOptions): VuePropDefinition<TValue, TOptions> => {
     const mergedOptions = {
       ...definition.defaultOptions,
       ...options,
@@ -43,6 +43,11 @@ export function defineWidget<TValue = any, TOptions extends Record<string, any> 
       },
     }
   }
+  // Attach component file path for module-level processing
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(fieldFn as any)._cmsComponent = definition.component
+
+  return fieldFn
 }
 
 // Fallback Vue PropType when not specified in widget definition
