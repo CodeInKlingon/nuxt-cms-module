@@ -9,7 +9,7 @@ export interface FilePickerOptions extends BaseFieldOptions {
 
 export const filePickerWidget = defineWidget<string, FilePickerOptions>({
   name: 'file-picker',
-  component: () => import('./FilePicker.vue'),
+  component: './cms/widgets/FilePicker.vue',
   defaultOptions: {
     default: '',
   },

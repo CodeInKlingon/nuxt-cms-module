@@ -3,7 +3,7 @@ import type { BooleanOptions } from '@codeinklingon/nuxt-cms/runtime/types/widge
 
 export const randomBooleanWidget = defineWidget<boolean, BooleanOptions>({
   name: 'random-boolean',
-  component: () => import('./RandomBoolean.vue'),
+  component: './cms/widgets/RandomBoolean.vue',
   defaultOptions: {
     default: false,
   },

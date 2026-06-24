@@ -11,7 +11,7 @@ export interface BlocksOptions {
 
 export const blocksWidget = defineWidget<BlockItem[], BlocksOptions>({
   name: 'blocks',
-  component: () => import('./BlocksWidget.vue'),
+  component: '',
   propType: Array,
   defaultOptions: {
     default: () => [],

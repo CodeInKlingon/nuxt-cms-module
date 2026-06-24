@@ -6,7 +6,7 @@ export type PropTypeConstructor = StringConstructor | NumberConstructor | Boolea
 export interface WidgetDefinitionOptions<TValue, TOptions = Record<string, any>> {
   name: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  component: () => Promise<any>
+  component: string
   defaultOptions?: Partial<TOptions>
   validate?: (value: TValue, options: TOptions) => string | true
   propType?: PropTypeConstructor

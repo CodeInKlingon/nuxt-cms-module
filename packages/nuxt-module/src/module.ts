@@ -18,7 +18,7 @@ import {
 } from '@nuxt/kit'
 import { joinURL } from 'ufo'
 import { existsSync, readdirSync } from 'node:fs'
-import { resolve, basename } from 'pathe'
+import { resolve, basename, extname } from 'pathe'
 import { pathToFileURL } from 'node:url'
 import type { Nuxt, PublicRuntimeConfig, RuntimeConfig } from '@nuxt/schema'
 
@@ -446,38 +446,41 @@ function setupWidgets(
     { name: 'useCollectionList', from: resolver.resolve('./runtime/composables/useCollectionList') },
   ])
 
-  // Path to user's widgets directory
-  const widgetsDir = resolve(nuxt.options.rootDir, 'cms/widgets')
-  // Scan for custom widget components
+  // Collect widget component info from user-defined widget definitions
   const widgetFiles: Array<{ name: string, path: string }> = []
-  if (existsSync(widgetsDir)) {
-    const files = readdirSync(widgetsDir)
-      .filter((f: string) => f.endsWith('.vue'))
-      .map((f: string) => ({
-        name: basename(f, '.vue'),
-        path: resolve(widgetsDir, f),
-      }))
-    widgetFiles.push(...files)
-  }
-  // Also support widgets passed via options
+  // Nuxt 4: Widget definitions are accessible via _cmsComponent on the FieldFunction
   const userWidgets = options.widgets || []
+  for (const widget of userWidgets) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const componentPath = (widget as any)._cmsComponent
+    if (typeof componentPath === 'string') {
+      const resolvedPath = resolve(nuxt.options.rootDir, componentPath)
+      // Strip any extension (vue, ts, tsx, js, jsx) to get the component name
+      const name = basename(resolvedPath, extname(resolvedPath))
+      widgetFiles.push({ name, path: resolvedPath })
+    }
+  }
+
+  // Register each widget component individually for global resolution
+  // (instead of addComponentsDir which scans all extensions)
+  for (const file of widgetFiles) {
+    addComponent({
+      name: file.name,
+      filePath: file.path,
+      global: true,
+    })
+  }
+
+  if (widgetFiles.length > 0) {
+    logger.info(`Widget components registered from ${widgetFiles.length} file(s): ${widgetFiles.map(w => w.name).join(', ')}`)
+  }
 
   // Generate virtual widget registry
   addTemplate({
     filename: '#cms/widgets.mjs',
     write: true,
-    getContents: () => generateWidgetRegistry(resolver, widgetFiles, userWidgets),
+    getContents: () => generateWidgetRegistry(resolver, widgetFiles),
   })
-
-  // Add components directory for widgets (for global resolution)
-  if (widgetFiles.length > 0) {
-    addComponentsDir({
-      path: widgetsDir,
-      global: true,
-      prefix: '',
-    })
-    logger.info(`Widget components registered from ${widgetsDir}: ${widgetFiles.map((w: { name: string }) => w.name).join(', ')}`)
-  }
 
   if (userWidgets.length > 0) {
     logger.info(`Widget system initialized with ${userWidgets.length} custom widget(s) from options`)
@@ -490,7 +493,6 @@ function setupWidgets(
 function generateWidgetRegistry(
   resolver: NuxtResolver,
   widgetFiles: Array<{ name: string, path: string }>,
-  _userWidgets: Array<() => unknown>,
 ): string {
   const lines: string[] = [
     '// Auto-generated widget registry',
@@ -521,8 +523,7 @@ function generateWidgetRegistry(
   }
 
   // Note: widgets passed via options.widgets are field functions created by defineWidget()
-  // Their components should be placed in cms/widgets/ to be auto-registered above
-  // or registered separately via addComponentsDir in the user's nuxt.config.ts
+  // Their components are now registered directly from the _cmsComponent metadata
 
   lines.push('}')
   lines.push('')

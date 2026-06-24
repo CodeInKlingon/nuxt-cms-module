@@ -3,7 +3,7 @@ import type { SelectOptions } from '../../types/widgets'
 
 export const selectWidget = defineWidget<string | string[], SelectOptions>({
   name: 'select',
-  component: () => import('./SelectWidget.vue'),
+  component: '',
   propType: String,
   defaultOptions: {
     default: '',
