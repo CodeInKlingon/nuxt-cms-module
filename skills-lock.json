@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "browser-mcp": {
+      "source": "codeinklingon/browser-mcp",
+      "sourceType": "github",
+      "skillPath": "skills/browser-mcp/SKILL.md",
+      "computedHash": "8b52fef6912de9dd2ca5148b3672066103e4604b3ffd6f3346729ff7e7e4948f"
+    },
     "nuxt": {
       "source": "antfu/skills",
       "sourceType": "github",
