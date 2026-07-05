@@ -1,0 +1,54 @@
+tools:
+  approvalMode: write
+  maxTimeout: 300
+  approval:
+    # Read tools — auto-approve
+    read: allow
+    search: allow
+    web_search: allow
+    find: allow
+
+    # Write tools — auto-approve (mode: write auto-approves write-tier anyway)
+    edit: allow
+    write: allow
+    todo: allow
+    irc: allow
+    resolve: allow
+
+    # Exec tools — prompt before execution
+    bash: prompt
+    eval: prompt
+    browser: prompt
+    debug: prompt
+    task: prompt
+    job: prompt
+    ask: prompt
+    generate_image: prompt
+
+    # Structural tools — prompt for edits, allow reads
+    ast_grep: allow
+    ast_edit: prompt
+
+    # LSP — mixed; prompt for mutations
+    lsp: prompt
+
+    # Security-sensitive — block
+    delete: deny
+    move: deny
+
+# Settings specific to this repository
+settings:
+  workspaceWrite: true       # Allow writing to workspace files
+  shellCommands: "prompt"   # Prompt before shell commands
+  codeExecution: "prompt"   # Require approval for code execution
+
+# Path-scoped restrictions (optional)
+disabledProviders:
+  - ollama                  # Block local model providers
+
+enabledModels:
+  - claude-3-5-sonnet       # Approved models for this repo
+
+# Security configuration
+secrets:
+  enabled: true            # Protect sensitive values

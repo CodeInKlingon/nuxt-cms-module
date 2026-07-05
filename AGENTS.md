@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Agent guide for `starter-module` (Nuxt module: `nuxt-cms`).
+Agent guide for `starter-module` (Nuxt module: `@codeinklingon/nuxt-cms`).
 Use this as the default operating manual for coding agents working in this repo.
 Check [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for more information on this project.
 

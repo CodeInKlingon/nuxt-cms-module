@@ -1,5 +1,7 @@
 
 - [x] login ui shows password error (red outline on input) on initial load
+- [ ] form error field highlighting
+- [ ] form builder component (short hand syntax so user doesn't have to define ui)
 - [x] collection search
 - [x] sortable columns
 - [x] colection filtering
@@ -7,6 +9,7 @@
 - [X] test and verify collection pagination
 - [x] test & verify relation field
   - [x] relation selection definition
+  - [ ] test and verify relation reordering
 - [x] fix form view ui
 - [x] defineWidget()
 - [x] custom auth handling
@@ -24,3 +27,9 @@
   - [ ] improve picker modal
 - [ ] Tailwind utilities not generated for components in `playground/cms/pages` (hotfixed with inline CSS in `playground/cms/pages/MediaLibrary.vue`; configure Tailwind content scanning to remove hotfix)
 - [ ] Two component files resolving to the same name warning
+- [ ] Playground duplicated imports fopr nuxt-auth-utils
+- [ ] playground:build:  ERROR  (node:255928) [DEP0155] DeprecationWarning: Use of deprecated trailing slash pattern mapping "./" in the "exports" field module resolution of the package at C:\Users\Daniel\source\starter-module\node_modules\@vue\shared\package.json imported from C:\Users\Daniel\source\starter-module\node_modules\@nuxt\nitro-server\dist\runtime\templates\error-500.mjs. Mapping specifiers ending in "/" is no longer supported.
+- [ ] playground:dev:  ERROR  (node:225736) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+- [ ] @codeinklingon/nuxt-cms:dev:prepare:  ERROR  Package subpath './runtime/composables/defineWidget' is not defined by "exports" in C:\Users\Daniel\source\starter-module\node_modules\@codeinklingon\nuxt-cms\package.json
+- [x] Two component files resolving to the same name warning
+- [ ] loading collection page for id slug that doesn't exist shold display error page

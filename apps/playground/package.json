@@ -1,0 +1,19 @@
+{
+  "private": true,
+  "name": "playground",
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "node --env-file .env .output/server/index.mjs",
+    "generate": "nuxt generate",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.3",
+    "drizzle-orm": "^0.45.0",
+    "@codeinklingon/nuxt-cms": "*",
+    "nuxt": "^4.4.2"
+  }
+}
