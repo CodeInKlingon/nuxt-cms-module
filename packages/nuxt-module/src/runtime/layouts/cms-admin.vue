@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
+
+import { navigateTo, useAppConfig, useFetch, useRuntimeConfig, useUserSession } from '#imports'
+
 import type { CollectionDefinition } from '../types'
 
 const appConfig = useAppConfig()

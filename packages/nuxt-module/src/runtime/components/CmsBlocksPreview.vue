@@ -53,6 +53,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
 import type { BlockItem } from '../types/widgets'
 
 interface Props {

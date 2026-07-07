@@ -1,3 +1,5 @@
+import { defineNitroPlugin } from 'nitropack/runtime'
+
 import { registerCollections, registerSchemaTables, setDrizzleConnection } from './database'
 import _db, { schema as _schema } from '#nuxt-cms/db.mjs'
 import { collections as _collections } from '#nuxt-cms/collections.mjs'

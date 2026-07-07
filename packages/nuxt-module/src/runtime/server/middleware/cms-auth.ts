@@ -1,5 +1,5 @@
 import { defineEventHandler } from 'h3'
-import { useRuntimeConfig } from '#imports'
+import { requireUserSession, useRuntimeConfig } from '#imports'
 import { getCollectionDefinition } from '../utils/drizzle-adapter'
 
 /**

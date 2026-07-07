@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
+import { definePageMeta, useHead, useRoute, useRuntimeConfig } from '#imports'
+
+import { useCollectionList } from '../../../composables/useCollectionList'
+
 const route = useRoute()
 const config = useRuntimeConfig()
 const collectionName = computed(() => route.params.collection as string)

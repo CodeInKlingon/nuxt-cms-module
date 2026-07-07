@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { resolveComponent } from 'vue'
+import { computed, resolveComponent } from 'vue'
+
+import { useRuntimeConfig } from '#imports'
 
 const props = defineProps<{
   pageName: string

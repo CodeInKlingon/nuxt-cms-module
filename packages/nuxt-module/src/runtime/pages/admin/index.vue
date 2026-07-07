@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
+import { definePageMeta, useFetch, useHead, useRuntimeConfig } from '#imports'
+
 import type { CollectionDefinition } from '../../types'
 
 const config = useRuntimeConfig()

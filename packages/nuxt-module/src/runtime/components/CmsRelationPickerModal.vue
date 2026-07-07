@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { ref, toRef, watch } from 'vue'
+
+import { useCollectionList } from '../composables/useCollectionList'
+
 const props = defineProps<{
   collectionName: string
   selectionMode?: 'single' | 'multiple'

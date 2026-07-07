@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+
+import { definePageMeta, useHead, useRoute, useRuntimeConfig } from '#imports'
+
 import type { CustomPageDefinition } from '../../../types'
 
 const route = useRoute()

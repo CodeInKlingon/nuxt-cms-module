@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { FormFieldConfig } from '../types'
 
 const props = defineProps<{

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+
+import { definePageMeta, useRouter, useRuntimeConfig, useUserSession } from '#imports'
+
 const config = useRuntimeConfig()
 const router = useRouter()
 const { fetch: refreshSession } = useUserSession()

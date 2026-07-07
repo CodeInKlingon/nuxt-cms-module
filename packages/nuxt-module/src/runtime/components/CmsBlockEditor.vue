@@ -179,6 +179,9 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+
+import { useToast } from '#imports'
+
 import type { BlockItem } from '../types/widgets'
 import { useBlockComponents } from '../composables/useBlockComponents'
 

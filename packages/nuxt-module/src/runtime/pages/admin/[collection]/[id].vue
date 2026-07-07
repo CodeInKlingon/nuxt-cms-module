@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+
+import { definePageMeta, useFetch, useHead, useRoute, useRuntimeConfig, useToast } from '#imports'
+
 import type { CollectionDefinition, FormSection, FormTab } from '../../../types'
 import type { BlockItem } from '../../../types/widgets'
 
