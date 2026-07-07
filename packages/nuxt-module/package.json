@@ -30,6 +30,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "nuxt-module-build build",
     "prepack": "npm run build",
