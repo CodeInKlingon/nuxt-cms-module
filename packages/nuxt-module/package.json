@@ -1,8 +1,8 @@
 {
   "name": "@codeinklingon/nuxt-cms",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A powerful CMS module for Nuxt with Drizzle ORM integration",
-  "repository": "CodeInKlingon/nuxt-cms",
+  "repository": "CodeInKlingon/nuxt-cms-module",
   "license": "MIT",
   "type": "module",
   "exports": {

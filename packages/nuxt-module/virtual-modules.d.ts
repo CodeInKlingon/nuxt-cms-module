@@ -3,7 +3,7 @@
 // available inside the Nitro/server bundle — not at type-check time for the root
 // tsconfig. These ambient declarations silence the "Cannot find module" errors.
 
-declare module '#my-module/db.mjs' {
+declare module '#nuxt-cms/db.mjs' {
   // The user's Drizzle db instance; typed as `any` because the specific schema
   // is defined by the consuming application, not by this module.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -13,7 +13,7 @@ declare module '#my-module/db.mjs' {
   export default db
 }
 
-declare module '#my-module/collections.mjs' {
+declare module '#nuxt-cms/collections.mjs' {
   import type { CollectionDefinition } from './src/runtime/types'
 
   export const collections: CollectionDefinition[]

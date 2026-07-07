@@ -172,7 +172,7 @@ export default defineNuxtModule<ModuleOptions>({
       const colArray = Object.entries(options.collections).map((_, i) => `_col${i}`).join(', ')
 
       addServerTemplate({
-        filename: '#my-module/collections.mjs',
+        filename: '#nuxt-cms/collections.mjs',
         getContents: () => `${colImports}
 export const collections = [${colArray}]`,
       })
@@ -180,7 +180,7 @@ export const collections = [${colArray}]`,
 
     if (options.database) {
       addServerTemplate({
-        filename: '#my-module/db.mjs',
+        filename: '#nuxt-cms/db.mjs',
         getContents: () => `export { default, schema } from '${resolve(nuxt.options.rootDir, options.database!)}'`,
       })
     }
@@ -195,13 +195,13 @@ export const collections = [${colArray}]`,
     // Auth handler virtual template (stub or user-provided)
     if (options.auth?.handler) {
       addServerTemplate({
-        filename: '#my-module/auth-handler.mjs',
+        filename: '#nuxt-cms/auth-handler.mjs',
         getContents: () => `export { default } from '${resolve(nuxt.options.rootDir, options.auth!.handler!)}'`,
       })
     }
     else {
       addServerTemplate({
-        filename: '#my-module/auth-handler.mjs',
+        filename: '#nuxt-cms/auth-handler.mjs',
         getContents: () => 'export default null',
       })
     }
@@ -681,18 +681,18 @@ declare module '#cms' {
   export type { CustomPageDefinition, CmsAuthVerifyFn, CmsLoginCredentials }
 }
 
-declare module '#my-module/db.mjs' {
+declare module '#nuxt-cms/db.mjs' {
   const db: unknown
   export const schema: unknown
   export default db
 }
 
-declare module '#my-module/auth-handler.mjs' {
+declare module '#nuxt-cms/auth-handler.mjs' {
   const authHandler: unknown
   export default authHandler
 }
 
-declare module '#my-module/collections.mjs' {
+declare module '#nuxt-cms/collections.mjs' {
   export const collections: unknown[]
 }
 declare module '#cms/blocks' {
