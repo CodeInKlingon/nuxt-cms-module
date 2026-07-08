@@ -17,10 +17,12 @@ const props = withDefaults(defineProps<{
   selectable?: boolean
   selectionMode?: 'single' | 'multiple'
   selectedIds?: (string | number)[]
+  primaryKey?: string
 }>(), {
   cellColumns: () => [],
   selectionMode: 'multiple',
   selectedIds: () => [],
+  primaryKey: 'id',
 })
 
 const emit = defineEmits<{
@@ -45,7 +47,7 @@ const tableColumns = computed(() => {
       id: 'selection',
       header: '',
       enableSorting: false,
-      accessorFn: (row: Record<string, unknown>) => row.id,
+      accessorFn: (row: Record<string, unknown>) => row[props.primaryKey],
       meta: {
         style: {
           th: { width: '48px' },
@@ -88,6 +90,10 @@ function toggleSelection(id: string | number) {
 
 function isSelected(id: string | number): boolean {
   return selected.value.includes(id)
+}
+
+function rowId(row: Record<string, unknown>): string | number {
+  return row[props.primaryKey] as string | number
 }
 
 function onSortingChange(sorting: { id?: string, desc?: boolean }[]) {
@@ -134,9 +140,9 @@ function onSortingChange(sorting: { id?: string, desc?: boolean }[]) {
       >
         <input
           :type="selectionMode === 'single' ? 'radio' : 'checkbox'"
-          :checked="isSelected(row.original.id as string | number)"
+          :checked="isSelected(rowId(row.original))"
           class="size-4 accent-primary"
-          @change="toggleSelection(row.original.id as string | number)"
+          @change="toggleSelection(rowId(row.original))"
         >
       </template>
 

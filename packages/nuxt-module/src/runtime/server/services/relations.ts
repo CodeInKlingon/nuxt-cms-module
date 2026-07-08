@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Drizzle table/transaction shapes are intentionally dynamic here. */
 import { eq, inArray } from 'drizzle-orm'
 import type { CollectionDefinition, FormFieldConfig, RelationConfig } from '../../types'
+import { getIdColumn, getRecordId } from '../../utils/primary-key'
+import { getCollectionDefinition } from '../plugins/database'
 import { getCollectionSchema, getSchemaTable } from '../utils/drizzle-adapter'
 import { flattenFormFields } from './validation'
 
@@ -136,6 +138,14 @@ function resolveTargetSchema(collectionName: string): any {
   return schema
 }
 
+function resolveTargetCollection(collectionName: string): CollectionDefinition {
+  const collection = getCollectionDefinition(collectionName)
+  if (!collection) {
+    throw new Error(`Target collection "${collectionName}" not found.`)
+  }
+  return collection
+}
+
 function normaliseIds(value: unknown, multiple: boolean): (string | number)[] {
   if (multiple) {
     if (Array.isArray(value)) return value as (string | number)[]
@@ -187,6 +197,7 @@ async function writeInverseRelation(
   value: unknown,
 ): Promise<void> {
   const relation = field.relation as Extract<RelationConfig, { storage: 'inverse' }>
+  const targetCollection = resolveTargetCollection(relation.collection)
   const targetSchema = resolveTargetSchema(relation.collection)
   const targetColumn = relation.targetColumn
 
@@ -202,7 +213,7 @@ async function writeInverseRelation(
   await tx
     .update(targetSchema)
     .set({ [targetColumn]: sourceId })
-    .where(inArray(targetSchema.id, selectedIds))
+    .where(inArray(getIdColumn(targetCollection, targetSchema), selectedIds))
 }
 
 async function writeJunctionRelation(
@@ -301,17 +312,18 @@ export async function readRelation(
     const rows = await db
       .select({ [relation.sourceColumn]: sourceSchema[relation.sourceColumn] })
       .from(sourceSchema)
-      .where(eq(sourceSchema.id, recordId))
+      .where(eq(getIdColumn(collection, sourceSchema), recordId))
       .limit(1)
 
     const targetId = rows[0]?.[relation.sourceColumn]
     if (targetId === null || targetId === undefined) return []
 
+    const targetCollection = resolveTargetCollection(relation.collection)
     const targetSchema = resolveTargetSchema(relation.collection)
     return db
       .select()
       .from(targetSchema)
-      .where(eq(targetSchema.id, targetId))
+      .where(eq(getIdColumn(targetCollection, targetSchema), targetId))
       .limit(1)
   }
 
@@ -324,6 +336,7 @@ export async function readRelation(
   }
 
   const junctionTable = resolveJunctionTable(relation)
+  const targetCollection = resolveTargetCollection(relation.collection)
   const targetSchema = resolveTargetSchema(relation.collection)
 
   const junctionSelection: Record<string, any> = {
@@ -344,7 +357,7 @@ export async function readRelation(
   const query = db
     .select()
     .from(targetSchema)
-    .where(inArray(targetSchema.id, targetIds))
+    .where(inArray(getIdColumn(targetCollection, targetSchema), targetIds))
 
   if (relation.sortable && relation.orderColumn) {
     const orderMap = new Map(
@@ -352,7 +365,7 @@ export async function readRelation(
     )
     const results = await query
     results.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-      return Number(orderMap.get(a.id) ?? 0) - Number(orderMap.get(b.id) ?? 0)
+      return Number(orderMap.get(getRecordId(targetCollection, a)) ?? 0) - Number(orderMap.get(getRecordId(targetCollection, b)) ?? 0)
     })
     return results
   }

@@ -2,8 +2,9 @@
 
 import type { H3Event } from 'h3'
 import { eq, like, or, and, asc, desc, inArray } from 'drizzle-orm'
-import type { CollectionDefinition, CrudContext, PaginatedResult, QueryOptions } from '../../types'
-import { getDrizzleConnection, getCollectionSchema } from '../utils/drizzle-adapter'
+import type { CollectionDefinition, CrudContext, PaginatedResult, QueryOptions, RelationDisplayConfig, RelationDisplaySourceConfig } from '../../types'
+import { getIdColumn, getRecordId } from '../../utils/primary-key'
+import { getDrizzleConnection, getCollectionSchema, getSchemaTable } from '../utils/drizzle-adapter'
 import { executeHooks } from './hooks'
 import { validateAndCoerce } from './validation'
 import { deleteRelations, extractRelations, writeRelations } from './relations'
@@ -46,9 +47,12 @@ export class CrudService {
       perPage = this.collection.options?.perPage || 25,
       filter,
       search,
+      searchColumns,
       sort,
       order = 'asc',
+      display,
     } = query
+    const displayConfig = display ?? this.collection.options?.display
 
     let dbQuery = this.db.select().from(this.schema)
 
@@ -59,9 +63,9 @@ export class CrudService {
 
     // Apply search
     if (search && this.collection.options?.searchable) {
-      const searchColumns = this.collection.options?.searchColumns
-      if (searchColumns && searchColumns.length > 0) {
-        dbQuery = this.applySearchFilter(dbQuery, search, searchColumns)
+      const columns = searchColumns ?? this.collection.options?.searchColumns ?? displayConfig?.searchFields
+      if (columns && columns.length > 0) {
+        dbQuery = await this.applySearchFilter(dbQuery, search, columns, displayConfig)
       }
     }
 
@@ -75,10 +79,13 @@ export class CrudService {
     dbQuery = dbQuery.limit(Number(perPage)).offset(offset)
 
     const items = await dbQuery
-    const total = await this.count(filter, search)
+    const displayItems = displayConfig?.source
+      ? await this.resolveDisplaySourceRows(items, displayConfig)
+      : items
+    const total = await this.count(filter, search, searchColumns, displayConfig)
 
     return {
-      items,
+      items: displayItems,
       total,
       page: Number(page),
       perPage: Number(perPage),
@@ -93,7 +100,7 @@ export class CrudService {
     const results = await this.db
       .select()
       .from(this.schema)
-      .where(eq(this.schema.id, id))
+      .where(eq(getIdColumn(this.collection, this.schema), id))
       .limit(1)
 
     return results[0] || null
@@ -131,7 +138,7 @@ export class CrudService {
         .returning()
 
       // Persist relations inside the same transaction
-      await writeRelations(tx, this.collection, record.id, relationValues)
+      await writeRelations(tx, this.collection, getRecordId(this.collection, record) as string | number, relationValues)
 
       // Execute afterCreate hook
       if (this.collection.hooks?.afterCreate) {
@@ -175,7 +182,7 @@ export class CrudService {
       const [record] = await tx
         .update(this.schema)
         .set(result.data)
-        .where(eq(this.schema.id, id))
+        .where(eq(getIdColumn(this.collection, this.schema), id))
         .returning()
 
       // Persist relations inside the same transaction
@@ -219,7 +226,7 @@ export class CrudService {
       // Delete record
       await tx
         .delete(this.schema)
-        .where(eq(this.schema.id, id))
+        .where(eq(getIdColumn(this.collection, this.schema), id))
 
       // Execute afterDelete hook
       if (this.collection.hooks?.afterDelete) {
@@ -237,7 +244,12 @@ export class CrudService {
   /**
    * Count total records with optional filters
    */
-  private async count(filter?: Record<string, any>, search?: string): Promise<number> {
+  private async count(
+    filter?: Record<string, any>,
+    search?: string,
+    querySearchColumns?: string[],
+    displayConfig: RelationDisplayConfig | undefined = this.collection.options?.display,
+  ): Promise<number> {
     let countQuery = this.db.select().from(this.schema)
 
     // Apply filters
@@ -247,9 +259,9 @@ export class CrudService {
 
     // Apply search filter to count as well
     if (search && this.collection.options?.searchable) {
-      const searchColumns = this.collection.options?.searchColumns
+      const searchColumns = querySearchColumns ?? this.collection.options?.searchColumns ?? displayConfig?.searchFields
       if (searchColumns && searchColumns.length > 0) {
-        countQuery = this.applySearchFilter(countQuery, search, searchColumns)
+        countQuery = await this.applySearchFilter(countQuery, search, searchColumns, displayConfig)
       }
     }
 
@@ -260,7 +272,12 @@ export class CrudService {
   /**
    * Apply search filter across specified columns using partial matching with OR logic
    */
-  private applySearchFilter(query: any, searchTerm: string, columns: string[]) {
+  private async applySearchFilter(query: any, searchTerm: string, columns: string[], displayConfig?: RelationDisplayConfig) {
+    const displaySource = displayConfig?.source
+    if (displaySource) {
+      return await this.applyDisplaySourceSearchFilter(query, searchTerm, columns, displaySource)
+    }
+
     const searchPattern = `%${searchTerm}%`
     const conditions = columns
       .map((col) => {
@@ -278,6 +295,110 @@ export class CrudService {
     }
 
     return query.where(or(...conditions))
+  }
+
+  private async applyDisplaySourceSearchFilter(
+    query: any,
+    searchTerm: string,
+    columns: string[],
+    source: RelationDisplaySourceConfig,
+  ) {
+    const sourceTable = this.resolveDisplaySourceTable(source)
+    this.validateDisplaySourceColumns(sourceTable, source)
+    const searchPattern = `%${searchTerm}%`
+    const searchConditions = columns
+      .map((col) => {
+        if (!(col in sourceTable)) {
+          console.warn(`Display search column "${col}" not found for collection "${this.collection.name}"`)
+          return null
+        }
+        return like(sourceTable[col], searchPattern)
+      })
+      .filter((condition): condition is ReturnType<typeof like> => condition !== null)
+
+    if (searchConditions.length === 0) return query
+
+    const sourceConditions = [or(...searchConditions), ...this.buildDisplaySourceWhere(sourceTable, source.where)]
+    const sourceRows = await this.db
+      .select({ value: sourceTable[source.foreignColumn] })
+      .from(sourceTable)
+      .where(and(...sourceConditions))
+
+    const ids = sourceRows
+      .map((row: Record<string, unknown>) => row.value)
+      .filter((value: unknown): value is string | number => typeof value === 'string' || typeof value === 'number')
+
+    if (ids.length === 0) {
+      return query.where(inArray(this.schema[source.localColumn], []))
+    }
+
+    return query.where(inArray(this.schema[source.localColumn], ids))
+  }
+
+  private async resolveDisplaySourceRows(items: Record<string, unknown>[], display: RelationDisplayConfig): Promise<Record<string, unknown>[]> {
+    if (!display.source || items.length === 0) return items
+
+    const source = display.source
+    const sourceTable = this.resolveDisplaySourceTable(source)
+    this.validateDisplaySourceColumns(sourceTable, source)
+
+    return await Promise.all(items.map(async (item) => {
+      const localValue = item[source.localColumn]
+      if (localValue === undefined || localValue === null) return item
+
+      const conditions = [
+        eq(sourceTable[source.foreignColumn], localValue),
+        ...this.buildDisplaySourceWhere(sourceTable, source.where),
+      ]
+      const rows = await this.db
+        .select()
+        .from(sourceTable)
+        .where(and(...conditions))
+        .limit(1)
+
+      return rows[0] ? { ...item, ...rows[0] } : item
+    }))
+  }
+
+  private resolveDisplaySourceTable(source: RelationDisplaySourceConfig): any {
+    if (source.collection) {
+      const schema = getCollectionSchema(source.collection)
+      if (!schema) {
+        throw new Error(`Display source collection "${source.collection}" not found.`)
+      }
+      return schema
+    }
+
+    if (typeof source.table === 'string') {
+      const table = getSchemaTable(source.table)
+      if (!table) {
+        throw new Error(`Display source table "${source.table}" not found.`)
+      }
+      return table
+    }
+
+    if (source.table) return source.table
+
+    throw new Error('Display source requires either "collection" or "table".')
+  }
+
+  private buildDisplaySourceWhere(sourceTable: any, where: RelationDisplaySourceConfig['where'] = {}) {
+    return Object.entries(where)
+      .map(([field, value]) => {
+        if (!(field in sourceTable)) {
+          throw new Error(`Display source where column "${field}" not found.`)
+        }
+        return eq(sourceTable[field], value)
+      })
+  }
+
+  private validateDisplaySourceColumns(sourceTable: any, source: RelationDisplaySourceConfig): void {
+    if (!(source.localColumn in this.schema)) {
+      throw new Error(`Display source localColumn "${source.localColumn}" not found in collection "${this.collection.name}".`)
+    }
+    if (!(source.foreignColumn in sourceTable)) {
+      throw new Error(`Display source foreignColumn "${source.foreignColumn}" not found.`)
+    }
   }
 
   /**

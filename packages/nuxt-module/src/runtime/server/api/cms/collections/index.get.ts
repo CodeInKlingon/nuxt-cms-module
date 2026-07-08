@@ -25,8 +25,8 @@ function serializeFields(fields: FormFieldConfig[]): FormFieldConfig[] {
       return rule
     })
 
-    // Relation config may contain the actual Drizzle table object on the
-    // junctionTable key, which cannot be serialized to the client.
+    // Relation config may contain Drizzle table objects, which cannot be
+    // serialized to the client.
     let relation = fieldConfig.relation
     if (relation && typeof relation === 'object' && 'junctionTable' in relation) {
       relation = {
@@ -34,6 +34,20 @@ function serializeFields(fields: FormFieldConfig[]): FormFieldConfig[] {
         junctionTable: typeof relation.junctionTable === 'string'
           ? relation.junctionTable
           : undefined,
+      } as FormFieldConfig['relation']
+    }
+    if (relation?.display?.source && 'table' in relation.display.source) {
+      relation = {
+        ...relation,
+        display: {
+          ...relation.display,
+          source: {
+            ...relation.display.source,
+            table: typeof relation.display.source.table === 'string'
+              ? relation.display.source.table
+              : undefined,
+          },
+        },
       } as FormFieldConfig['relation']
     }
 
@@ -78,8 +92,26 @@ function serializeDashboard(dashboard: DashboardConfig | undefined): DashboardCo
 export default defineEventHandler(() => {
   return getAllCollectionDefinitions().map(definition => ({
     name: definition.name,
+    primaryKey: definition.primaryKey || 'id',
     dashboard: serializeDashboard(definition.dashboard),
-    options: definition.options,
+    options: definition.options
+      ? {
+          ...definition.options,
+          display: serializeDisplay(definition.options.display),
+        }
+      : undefined,
     blocks: definition.blocks,
   }))
 })
+
+function serializeDisplay<T extends { source?: { table?: string | unknown } } | undefined>(display: T): T {
+  if (!display?.source || !('table' in display.source)) return display
+
+  return {
+    ...display,
+    source: {
+      ...display.source,
+      table: typeof display.source.table === 'string' ? display.source.table : undefined,
+    },
+  }
+}

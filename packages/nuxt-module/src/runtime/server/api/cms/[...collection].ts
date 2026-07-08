@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { defineEventHandler, getMethod, readBody, getQuery, createError } from 'h3'
+import type { RelationDisplayConfig } from '../../../types'
 import { CrudService } from '../../services/crud'
 import { getCollectionDefinition } from '../../utils/drizzle-adapter'
 
@@ -53,12 +54,15 @@ export default defineEventHandler(async (event) => {
               filter[fieldName] = value
             }
           }
+          const order = firstQueryValue(query.order)
           return await crudService.findMany({
-            page: query.page,
-            perPage: query.perPage,
-            sort: query.sort,
-            order: query.order,
-            search: query.search,
+            page: parseNumberQueryValue(query.page),
+            perPage: parseNumberQueryValue(query.perPage),
+            sort: firstQueryValue(query.sort),
+            order: order === 'desc' ? 'desc' : order === 'asc' ? 'asc' : undefined,
+            search: firstQueryValue(query.search),
+            searchColumns: parseSearchColumns(query.searchColumns),
+            display: parseDisplayQueryValue(query.display),
             filter: Object.keys(filter).length > 0 ? filter : undefined,
           })
         }
@@ -100,3 +104,44 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
+
+function firstQueryValue(value: unknown): string | undefined {
+  if (Array.isArray(value)) return firstQueryValue(value[0])
+  return typeof value === 'string' ? value : undefined
+}
+
+function parseNumberQueryValue(value: unknown): number | undefined {
+  const stringValue = firstQueryValue(value)
+  if (!stringValue) return undefined
+
+  const numberValue = Number(stringValue)
+  return Number.isNaN(numberValue) ? undefined : numberValue
+}
+
+function parseSearchColumns(value: unknown): string[] | undefined {
+  if (Array.isArray(value)) {
+    return value.flatMap(item => parseSearchColumns(item) ?? [])
+  }
+  if (typeof value !== 'string') return undefined
+
+  const columns = value
+    .split(',')
+    .map(column => column.trim())
+    .filter(Boolean)
+
+  return columns.length > 0 ? columns : undefined
+}
+
+function parseDisplayQueryValue(value: unknown): RelationDisplayConfig | undefined {
+  const stringValue = firstQueryValue(value)
+  if (!stringValue) return undefined
+
+  try {
+    const display = JSON.parse(stringValue) as RelationDisplayConfig
+    if (!display || typeof display !== 'object') return undefined
+    return display
+  }
+  catch {
+    return undefined
+  }
+}

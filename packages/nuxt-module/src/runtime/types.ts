@@ -5,6 +5,7 @@ import type { H3Event } from 'h3'
 export interface CollectionDefinition<T = any> {
   name: string
   schema: T // Drizzle table reference
+  primaryKey?: string
   dashboard?: DashboardConfig
   options?: CollectionOptions
   hooks?: CollectionHooks
@@ -166,6 +167,26 @@ export interface FormFieldConfig {
 interface RelationConfigBase {
   type: 'one' | 'many'
   collection: string
+  display?: RelationDisplayConfig
+}
+
+/** Display configuration used by relation pickers and selected relation cards. */
+export interface RelationDisplayConfig {
+  source?: RelationDisplaySourceConfig
+  field?: string
+  secondaryFields?: string[]
+  searchFields?: string[]
+  template?: string
+  fallback?: string
+}
+
+/** Optional related table/collection used to resolve relation picker labels. */
+export interface RelationDisplaySourceConfig {
+  collection?: string
+  table?: string | unknown
+  localColumn: string
+  foreignColumn: string
+  where?: Record<string, string | number | boolean | null>
 }
 
 /** Relation stored as a FK column on the source collection table. */
@@ -225,6 +246,7 @@ export interface CollectionOptions {
   label?: string
   description?: string
   icon?: string
+  display?: RelationDisplayConfig
   sortable?: boolean
   searchable?: boolean
   searchColumns?: string[]
@@ -279,6 +301,8 @@ export interface QueryOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filter?: Record<string, any>
   search?: string
+  searchColumns?: string[]
+  display?: RelationDisplayConfig
 }
 
 // ---------------------------------------------------------------------------

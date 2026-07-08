@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { defineCollection } from '../src/runtime/composables/defineCollection'
+import { getIdColumn, getPrimaryKey, getRecordId } from '../src/runtime/utils/primary-key'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -31,6 +32,30 @@ describe('defineCollection', () => {
     expect(collection.dashboard?.form?.sections?.[0]?.fields[0]?.field).toBe('title')
     expect(collection.options?.sortable).toBe(true)
     expect(collection.options?.searchable).toBe(true)
+    expect(collection.primaryKey).toBe('id')
+  })
+
+  it('should preserve a custom primary key', () => {
+    const collection = defineCollection({
+      name: 'products',
+      schema: { productId: {} } as any,
+      primaryKey: 'productId',
+    })
+
+    expect(collection.primaryKey).toBe('productId')
+    expect(getPrimaryKey(collection)).toBe('productId')
+    expect(getRecordId(collection, { productId: 123 })).toBe(123)
+  })
+
+  it('should throw a clear error when primary key is missing from schema', () => {
+    const collection = defineCollection({
+      name: 'products',
+      schema: { id: {} } as any,
+      primaryKey: 'productId',
+    })
+
+    expect(() => getIdColumn(collection, collection.schema as any))
+      .toThrow('Primary key "productId" not found on schema for collection "products"')
   })
 
   it('should merge custom options with defaults', () => {
@@ -158,5 +183,92 @@ describe('defineCollection', () => {
     expect(collection.dashboard?.list?.filters?.[0]?.field).toBe('status')
     expect(collection.dashboard?.list?.filters?.[0]?.options).toHaveLength(2)
     expect(collection.dashboard?.list?.filters?.[1]?.multiple).toBe(true)
+  })
+
+  it('should preserve relation display configuration', () => {
+    const collection = defineCollection({
+      name: 'posts',
+      schema: {} as any,
+      dashboard: {
+        form: {
+          sections: [
+            {
+              fields: [
+                {
+                  field: 'category',
+                  widget: 'relation',
+                  relation: {
+                    type: 'one',
+                    storage: 'inline',
+                    collection: 'categories',
+                    sourceColumn: 'categoryId',
+                    display: {
+                      template: '{name} ({categoryId})',
+                      searchFields: ['name', 'categoryId'],
+                      fallback: 'categoryId',
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    })
+
+    const relation = collection.dashboard?.form?.sections?.[0]?.fields[0]?.relation
+
+    expect(relation?.display?.template).toBe('{name} ({categoryId})')
+    expect(relation?.display?.searchFields).toEqual(['name', 'categoryId'])
+    expect(relation?.display?.fallback).toBe('categoryId')
+  })
+
+  it('should preserve joined relation display source configuration', () => {
+    const collection = defineCollection({
+      name: 'posts',
+      schema: {} as any,
+      dashboard: {
+        form: {
+          sections: [
+            {
+              fields: [
+                {
+                  field: 'author',
+                  widget: 'relation',
+                  relation: {
+                    type: 'one',
+                    storage: 'inline',
+                    collection: 'authors',
+                    sourceColumn: 'authorId',
+                    display: {
+                      source: {
+                        collection: 'authorProfiles',
+                        localColumn: 'id',
+                        foreignColumn: 'authorId',
+                        where: { locale: 'en' },
+                      },
+                      field: 'displayName',
+                      searchFields: ['displayName'],
+                      fallback: 'id',
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    })
+
+    const display = collection.dashboard?.form?.sections?.[0]?.fields[0]?.relation?.display
+
+    expect(display?.source).toEqual({
+      collection: 'authorProfiles',
+      localColumn: 'id',
+      foreignColumn: 'authorId',
+      where: { locale: 'en' },
+    })
+    expect(display?.field).toBe('displayName')
+    expect(display?.searchFields).toEqual(['displayName'])
   })
 })

@@ -62,6 +62,7 @@ export function defineCollection<T = any>(
 
   return {
     ...definition,
+    primaryKey: definition.primaryKey || 'id',
     options: {
       label: definition.name,
       sortable: true,

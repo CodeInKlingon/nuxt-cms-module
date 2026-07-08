@@ -2,10 +2,12 @@
 import { ref, toRef, watch } from 'vue'
 
 import { useCollectionList } from '../composables/useCollectionList'
+import type { RelationDisplayConfig } from '../types'
 
 const props = defineProps<{
   collectionName: string
   selectionMode?: 'single' | 'multiple'
+  display?: RelationDisplayConfig
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
@@ -34,8 +36,12 @@ const {
   pending,
   columns,
   cellColumns,
+  primaryKey,
   onSortingChange,
-} = useCollectionList(toRef(props, 'collectionName'), { initialPageSize: 10 })
+} = useCollectionList(toRef(props, 'collectionName'), {
+  initialPageSize: 10,
+  display: toRef(props, 'display'),
+})
 
 function confirm() {
   selectedIds.value = [...localSelectedIds.value]
@@ -69,6 +75,7 @@ function cancel() {
         :page-size="pageSize"
         :loading="pending"
         :cell-columns="cellColumns"
+        :primary-key="primaryKey"
         selectable
         :selection-mode="selectionMode || 'multiple'"
         :selected-ids="localSelectedIds"

@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue'
 import { useAsyncData, useFetch, useRoute, useRuntimeConfig } from '#imports'
 
 import type { CollectionDefinition, RelationConfig } from '../../types'
+import { getPrimaryKey, getRecordId } from '../../utils/primary-key'
 
 const props = defineProps<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,6 +85,20 @@ const { data: savedRelations, pending: loadingSaved } = await useAsyncData<Recor
   { default: () => [], watch: [sourceCollection, recordId, () => props.relationField] },
 )
 
+const pickerOpen = ref(false)
+
+// Fetch target collection metadata to reuse its list config for cards.
+const { data: allCollections } = await useFetch<CollectionDefinition[]>(
+  () => `${apiPrefix.value}/collections`,
+  { default: (): CollectionDefinition[] => [] },
+)
+
+const targetCollection = computed(() =>
+  allCollections.value.find(c => c.name === relation.collection),
+)
+
+const targetPrimaryKey = computed(() => targetCollection.value ? getPrimaryKey(targetCollection.value) : 'id')
+
 watch([savedRelations, loadingSaved], ([records, pending]) => {
   if (pending || savedLoaded.value) return
 
@@ -101,25 +116,17 @@ watch([savedRelations, loadingSaved], ([records, pending]) => {
   savedLoaded.value = true
   if (!records || records.length === 0) return
 
-  const ids = records.map(r => r.id as string | number)
+  const ids = records.map(r => getRecordId({ name: relation.collection, primaryKey: targetPrimaryKey.value }, r) as string | number)
   loadedIds.value = ids
   emit('update:modelValue', isMultiple ? ids : ids[0] ?? null)
 }, { immediate: true })
 
-const pickerOpen = ref(false)
-
-// Fetch target collection metadata to reuse its list config for cards.
-const { data: allCollections } = await useFetch<CollectionDefinition[]>(
-  () => `${apiPrefix.value}/collections`,
-  { default: (): CollectionDefinition[] => [] },
-)
-
-const targetCollection = computed(() =>
-  allCollections.value.find(c => c.name === relation.collection),
-)
-
 const listColumns = computed(() =>
   targetCollection.value?.dashboard?.list?.columns ?? [],
+)
+
+const displayConfig = computed(() =>
+  relation.display ?? targetCollection.value?.options?.display,
 )
 
 // Fetch selected target records whenever the selection changes.
@@ -129,9 +136,12 @@ const { data: selectedRecords } = await useAsyncData<{ items: Record<string, unk
     if (selectedIds.value.length === 0) return { items: [] }
     const params = new URLSearchParams()
     for (const id of selectedIds.value) {
-      params.append('filter_id', String(id))
+      params.append(`filter_${targetPrimaryKey.value}`, String(id))
     }
-    return $fetch<{ items: Record<string, unknown>[] }>(`/api/cms/${relation.collection}?${params.toString()}`)
+    if (displayConfig.value?.source) {
+      params.set('display', JSON.stringify(displayConfig.value))
+    }
+    return $fetch<{ items: Record<string, unknown>[] }>(`${apiPrefix.value}/${relation.collection}?${params.toString()}`)
   },
   { default: () => ({ items: [] }), watch: [selectedIds] },
 )
@@ -140,7 +150,7 @@ const recordsById = computed(() => {
   const items = (selectedRecords.value as { items: Record<string, unknown>[] } | null)?.items ?? []
   const map = new Map<string | number, Record<string, unknown>>()
   for (const item of items) {
-    map.set(item.id as string | number, item)
+    map.set(getRecordId({ name: relation.collection, primaryKey: targetPrimaryKey.value }, item) as string | number, item)
   }
   return map
 })
@@ -152,9 +162,42 @@ const orderedRecords = computed(() => {
 })
 
 const cardColumns = computed(() => {
+  const display = displayConfig.value
+  if (display?.field || display?.template) return []
+
   // Use the first 2 list columns for the card display.
   return listColumns.value.slice(0, 2)
 })
+
+function displayRelationLabel(record: Record<string, unknown>): string {
+  const display = displayConfig.value
+  const fallbackField = display?.fallback || targetPrimaryKey.value
+  const fallback = record[fallbackField] ?? record[targetPrimaryKey.value]
+
+  if (display?.template) {
+    const label = display.template.replace(/\{([^}]+)\}/g, (_, field: string) => {
+      const value = record[field.trim()]
+      return value === undefined || value === null ? '' : String(value)
+    }).trim()
+    if (label) return label
+  }
+
+  if (display?.field) {
+    const value = record[display.field]
+    if (value !== undefined && value !== null && value !== '') {
+      const parts = [String(value)]
+      for (const field of display.secondaryFields ?? []) {
+        const secondaryValue = record[field]
+        if (secondaryValue !== undefined && secondaryValue !== null && secondaryValue !== '') {
+          parts.push(String(secondaryValue))
+        }
+      }
+      return parts.join(' ')
+    }
+  }
+
+  return fallback === undefined || fallback === null ? '' : String(fallback)
+}
 
 function removeId(id: string | number) {
   const idStr = String(id)
@@ -163,6 +206,10 @@ function removeId(id: string | number) {
 
 function onPickerSelect(ids: (string | number)[]) {
   selectedIds.value = ids
+}
+
+function selectedRecordId(record: Record<string, unknown>): string | number {
+  return getRecordId({ name: relation.collection, primaryKey: targetPrimaryKey.value }, record) as string | number
 }
 </script>
 
@@ -175,7 +222,7 @@ function onPickerSelect(ids: (string | number)[]) {
     >
       <div
         v-for="record in orderedRecords"
-        :key="String(record.id)"
+        :key="String(selectedRecordId(record))"
         class="flex items-center justify-between gap-3 p-3 rounded-lg border border-default bg-elevated/50"
       >
         <div class="min-w-0 flex-1">
@@ -188,10 +235,16 @@ function onPickerSelect(ids: (string | number)[]) {
               :row="record"
             />
             <span
-              v-if="cardColumns.length === 0"
+              v-if="displayConfig"
               class="text-sm text-highlighted"
             >
-              {{ record.id }}
+              {{ displayRelationLabel(record) }}
+            </span>
+            <span
+              v-else-if="cardColumns.length === 0"
+              class="text-sm text-highlighted"
+            >
+              {{ selectedRecordId(record) }}
             </span>
           </div>
         </div>
@@ -200,7 +253,7 @@ function onPickerSelect(ids: (string | number)[]) {
           color="neutral"
           variant="ghost"
           size="xs"
-          @click="removeId(String(record.id))"
+          @click="removeId(String(selectedRecordId(record)))"
         />
       </div>
     </div>
@@ -231,6 +284,7 @@ function onPickerSelect(ids: (string | number)[]) {
       v-model="selectedIds"
       :collection-name="relation.collection"
       :selection-mode="isMultiple ? 'multiple' : 'single'"
+      :display="displayConfig"
       @update:model-value="onPickerSelect"
     />
   </div>

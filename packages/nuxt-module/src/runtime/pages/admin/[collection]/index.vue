@@ -25,9 +25,12 @@ const {
   refresh,
   columns,
   cellColumns,
+  primaryKey,
   onSortingChange,
   deleteItem,
 } = useCollectionList(collectionName)
+
+const rowId = (row: Record<string, unknown>) => row[primaryKey.value]
 
 const pageTitle = computed(() => {
   const baseTitle = config.public.cms.admin?.title || 'CMS Admin'
@@ -80,6 +83,7 @@ definePageMeta({
         :sort-field="sortField"
         :sort-order="sortOrder"
         :cell-columns="cellColumns"
+        :primary-key="primaryKey"
         @update:sort="onSortingChange"
         @update:page="page = $event"
         @refresh="refresh"
@@ -92,7 +96,7 @@ definePageMeta({
                 size="xs"
                 color="neutral"
                 variant="ghost"
-                :to="`${adminRoute}/${collectionName}/${(row as Record<string, unknown>).id}`"
+                :to="`${adminRoute}/${collectionName}/${rowId(row as Record<string, unknown>)}`"
               />
             </UTooltip>
             <UTooltip text="Delete">
@@ -101,7 +105,7 @@ definePageMeta({
                 size="xs"
                 color="error"
                 variant="ghost"
-                @click="deleteItem(String((row as Record<string, unknown>).id))"
+                @click="deleteItem(String(rowId(row as Record<string, unknown>)))"
               />
             </UTooltip>
           </div>
